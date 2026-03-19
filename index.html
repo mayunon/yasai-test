@@ -1,157 +1,1491 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>野菜カレンダー（テスト）</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌱 Vegetable Calendar / 野菜カレンダー</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0fdfa 100%);
+    min-height: 100vh;
+    padding: 16px;
+    font-size: 16px;
+  }
+  h1 { font-size: 22px; font-weight: 800; color: #14532d; margin: 4px 0 1px; }
+  h1 span { display: block; font-size: 14px; font-weight: 500; color: #6b7280; }
+  .subtitle { font-size: 13px; color: #9ca3af; }
+  header { text-align: center; margin-bottom: 16px; }
+  header .icon { font-size: 40px; }
 
-    body {
-      font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
-      background: #f5f0e8;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+  /* Lang toggle */
+  .lang-bar {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .lang-btn {
+    padding: 7px 18px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 20px;
+    font-size: 14px;
+    cursor: pointer;
+    background: #fff;
+    color: #6b7280;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  .lang-btn.active {
+    background: #14532d;
+    border-color: #14532d;
+    color: #fff;
+    font-weight: 700;
+  }
 
-    /* ===== パスワード画面 ===== */
-    #lock-screen {
-      background: white;
-      border-radius: 16px;
-      padding: 48px 40px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.1);
-      text-align: center;
-      max-width: 360px;
-      width: 90%;
-    }
+  .tab-bar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 0 auto 16px;
+  }
+  .tab-btn {
+    padding: 12px 6px; border: 2px solid #e5e7eb; border-radius: 12px;
+    font-size: 15px; cursor: pointer; background: #fff;
+    color: #6b7280; font-weight: 500; transition: all 0.2s;
+    text-align: center; line-height: 1.4;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .tab-btn.active {
+    background: #14532d; border-color: #14532d; color: #fff; font-weight: 700;
+    box-shadow: 0 2px 8px rgba(20,83,45,0.25);
+  }
 
-    #lock-screen .icon {
-      font-size: 48px;
-      margin-bottom: 16px;
-    }
+  .month-scroll {
+    display: flex; gap: 5px; overflow-x: auto;
+    padding-bottom: 8px; margin-bottom: 14px;
+  }
+  .month-btn {
+    min-width: 52px; padding: 8px 4px; border: none; border-radius: 10px;
+    font-size: 13px; cursor: pointer; background: #fff; color: #374151;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08); flex-shrink: 0;
+    transition: all 0.2s; position: relative; line-height: 1.3;
+    text-align: center;
+  }
+  .month-btn.selected { color: #fff; font-weight: 700; }
+  .month-btn.now-dot::after {
+    content: ''; position: absolute; top: 3px; right: 4px;
+    width: 5px; height: 5px; border-radius: 50%; background: #22c55e;
+  }
 
-    #lock-screen h1 {
-      font-size: 20px;
-      color: #333;
-      margin-bottom: 8px;
-    }
+  .season-badge {
+    display: inline-flex; align-items: center; border-radius: 20px;
+    padding: 5px 16px; margin-bottom: 12px; font-size: 14px;
+    font-weight: 700; border: 1.5px solid;
+  }
 
-    #lock-screen p {
-      font-size: 14px;
-      color: #888;
-      margin-bottom: 28px;
-    }
+  .veg-card {
+    background: #fff; border-radius: 14px; padding: 14px 16px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.07); cursor: pointer;
+    margin-bottom: 10px; border: 2px solid transparent; transition: all 0.2s;
+  }
+  .veg-card-header { display: flex; align-items: center; gap: 10px; }
+  .veg-emoji { font-size: 32px; }
+  .veg-name { font-weight: 700; font-size: 19px; color: #111827; }
+  .veg-name-sub { font-size: 14px; color: #9ca3af; font-weight: 400; margin-top: 1px; }
+  .tags { display: flex; gap: 5px; margin-top: 4px; flex-wrap: wrap; }
+  .tag { border-radius: 8px; padding: 3px 9px; font-size: 12px; font-weight: 600; border: 1px solid; }
+  .arrow { color: #9ca3af; font-size: 20px; margin-left: auto; flex-shrink: 0; }
+  .veg-detail { margin-top: 12px; padding-top: 10px; border-top: 1px solid #f3f4f6; display: none; }
+  .veg-detail.open { display: block; }
+  .detail-note { font-size: 17px; color: #4b5563; margin-bottom: 8px; line-height: 1.85; }
+  .detail-note-en { font-size: 15px; color: #9ca3af; margin-bottom: 8px; font-style: italic; line-height: 1.7; }
+  .detail-row { font-size: 16px; color: #6b7280; margin-top: 6px; }
+  .detail-recipe { font-size: 16px; color: #b45309; margin-top: 10px; line-height: 1.85; }
+  .detail-recipe a { color: #b45309; }
+  .detail-storage { font-size: 16px; color: #1d4ed8; margin-top: 8px; line-height: 1.85; }
 
-    #lock-screen input {
-      width: 100%;
-      padding: 12px 16px;
-      border: 2px solid #ddd;
-      border-radius: 8px;
-      font-size: 16px;
-      outline: none;
-      transition: border-color 0.2s;
-      margin-bottom: 12px;
-    }
+  .mini-labels { display: flex; gap: 2px; margin-top: 6px; margin-bottom: 2px; }
+  .mini-label { flex: 1; text-align: center; font-size: 9px; color: #9ca3af; }
+  .mini-label.now-label { color: #14532d; font-weight: 700; }
+  .mini-bar { display: flex; gap: 2px; }
+  .mini-cell { flex: 1; height: 16px; border-radius: 3px; background: #f3f4f6; }
+  .mini-cell.sow { background: #86efac; }
+  .mini-cell.seedling { background: #fcd34d; }
+  .mini-cell.harvest { background: #fca5a5; }
+  .mini-cell.now { outline: 2px solid #14532d; }
+  .mini-legend { display: flex; gap: 8px; margin-top: 3px; font-size: 11px; color: #9ca3af; }
 
-    #lock-screen input:focus {
-      border-color: #6aaa64;
-    }
 
-    #lock-screen button {
-      width: 100%;
-      padding: 12px;
-      background: #6aaa64;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
+  .empty { text-align: center; color: #9ca3af; padding: 32px; font-size: 15px; }
+  .footer { text-align: center; margin-top: 24px; font-size: 12px; color: #d1d5db; }
 
-    #lock-screen button:hover {
-      background: #5a9454;
-    }
+  /* 月別カレンダー タイルレイアウト */
+  .cal-section { background:#fff; border-radius:14px; overflow:hidden; box-shadow:0 1px 6px rgba(0,0,0,0.07); margin-bottom:12px; }
+  .cal-section-header { display:flex; align-items:center; padding:10px 14px; }
+  .cal-tile-grid { display:flex; flex-wrap:wrap; gap:8px; padding:10px 12px 12px; }
+  .cal-tile {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:3px; padding:8px 6px; border-radius:10px; cursor:pointer;
+    background:#f9fafb; border:1.5px solid #e5e7eb;
+    min-width:60px; transition:all 0.15s; text-align:center;
+  }
+  .cal-tile:active, .cal-tile.active {
+    background:#ecfdf5; border-color:#16a34a;
+  }
+  .cal-tile-emoji { font-size:24px; line-height:1; }
+  .cal-tile-name { font-size:12px; font-weight:600; color:#111827; line-height:1.3; }
+  .cal-detail-panel {
+    margin:0 12px 12px; padding:12px 14px;
+    background:#f8fafc; border-radius:10px;
+    border-left:3px solid #e5e7eb;
+  }
 
-    #error-msg {
-      color: #e05555;
-      font-size: 13px;
-      margin-top: 10px;
-      display: none;
-    }
-
-    /* ===== コンテンツ画面 ===== */
-    #content {
-      display: none;
-      text-align: center;
-      padding: 40px 20px;
-    }
-
-    #content h1 {
-      font-size: 28px;
-      color: #333;
-      margin-bottom: 16px;
-    }
-
-    #content p {
-      font-size: 16px;
-      color: #666;
-      margin-bottom: 24px;
-    }
-
-    #content .badge {
-      display: inline-block;
-      background: #6aaa64;
-      color: white;
-      padding: 8px 20px;
-      border-radius: 20px;
-      font-size: 14px;
-    }
-  </style>
+  .search-wrap {
+    position: relative; margin-bottom: 14px;
+  }
+  .search-input {
+    width: 100%; padding: 12px 16px 12px 42px;
+    border: 1.5px solid #d1d5db; border-radius: 12px;
+    font-size: 16px; color: #111827; background: #fff;
+    outline: none; transition: border-color 0.2s;
+    font-family: inherit;
+  }
+  .search-input:focus { border-color: #22c55e; }
+  .search-icon {
+    position: absolute; left: 12px; top: 50%;
+    transform: translateY(-50%); font-size: 15px; pointer-events: none;
+  }
+  .search-clear {
+    position: absolute; right: 10px; top: 50%;
+    transform: translateY(-50%); background: #e5e7eb;
+    border: none; border-radius: 50%; width: 20px; height: 20px;
+    font-size: 11px; cursor: pointer; color: #6b7280;
+    display: none; align-items: center; justify-content: center;
+  }
+  .wiki-img {
+    width: 120px; height: 120px; object-fit: cover;
+    border-radius: 10px; display: block; float: right;
+    margin: 0 0 8px 12px;
+  }
+  .wiki-img-wrap { min-height: 0; }
+  .wiki-img-loading { font-size: 12px; color: #9ca3af; margin-bottom: 6px; }
+</style>
 </head>
-<body>
+<style>
+  #lock-screen {
+    position: fixed; inset: 0; background: #f5f0e8;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+  }
+  #lock-box {
+    background: white; border-radius: 16px; padding: 48px 40px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+    text-align: center; max-width: 360px; width: 90%;
+  }
+  #lock-box .lock-icon { font-size: 48px; margin-bottom: 16px; }
+  #lock-box h2 { font-size: 20px; color: #333; margin-bottom: 8px; }
+  #lock-box p { font-size: 14px; color: #888; margin-bottom: 28px; }
+  #lock-box input {
+    width: 100%; padding: 12px 16px; border: 2px solid #ddd;
+    border-radius: 8px; font-size: 16px; outline: none;
+    transition: border-color 0.2s; margin-bottom: 12px;
+    font-family: inherit;
+  }
+  #lock-box input:focus { border-color: #6aaa64; }
+  #lock-box button {
+    width: 100%; padding: 12px; background: #6aaa64; color: white;
+    border: none; border-radius: 8px; font-size: 16px; cursor: pointer;
+    transition: background 0.2s; font-family: inherit;
+  }
+  #lock-box button:hover { background: #5a9454; }
+  #lock-error { color: #e05555; font-size: 13px; margin-top: 10px; display: none; }
+</style>
 
-  <!-- パスワード画面 -->
-  <div id="lock-screen">
-    <div class="icon">🥦</div>
-    <h1>野菜カレンダー</h1>
+<!-- パスワード画面 -->
+<div id="lock-screen">
+  <div id="lock-box">
+    <div class="lock-icon">🌱</div>
+    <h2>野菜カレンダー</h2>
     <p>パスワードを入力してください</p>
-    <input type="password" id="pw-input" placeholder="パスワード" />
-    <button onclick="checkPassword()">入る</button>
-    <div id="error-msg">パスワードが違います</div>
+    <input type="password" id="lock-input" placeholder="パスワード" />
+    <button onclick="checkLock()">入る</button>
+    <div id="lock-error">パスワードが違います</div>
   </div>
+</div>
 
-  <!-- ロック解除後のコンテンツ -->
-  <div id="content">
-    <div style="font-size:64px; margin-bottom:16px;">🌱</div>
-    <h1>パスワード解除できました！</h1>
-    <p>ここに野菜カレンダーの内容を入れます。<br>テスト成功です🎉</p>
-    <div class="badge">✅ 認証済み</div>
-  </div>
+<script>
+  // ★パスワードをここで変更できます★
+  const LOCK_PASSWORD = "mogimogi";
+  const LOCK_KEY = "yasai_unlocked";
 
-  <script>
-    // ★ここがパスワード★
-    const CORRECT_PASSWORD = "mogimogi";
+  // 認証済みならすぐ解除
+  if (localStorage.getItem(LOCK_KEY) === "yes") {
+    document.addEventListener('DOMContentLoaded', function() {
+      var ls = document.getElementById('lock-screen');
+      if (ls) ls.style.display = 'none';
+    });
+  }
 
-    function checkPassword() {
-      const input = document.getElementById('pw-input').value;
-      if (input === CORRECT_PASSWORD) {
-        document.getElementById('lock-screen').style.display = 'none';
-        document.getElementById('content').style.display = 'block';
-      } else {
-        document.getElementById('error-msg').style.display = 'block';
-        document.getElementById('pw-input').value = '';
-        document.getElementById('pw-input').focus();
+  function checkLock() {
+    const input = document.getElementById('lock-input').value;
+    if (input === LOCK_PASSWORD) {
+      localStorage.setItem(LOCK_KEY, "yes");
+      document.getElementById('lock-screen').style.display = 'none';
+    } else {
+      document.getElementById('lock-error').style.display = 'block';
+      document.getElementById('lock-input').value = '';
+      document.getElementById('lock-input').focus();
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var inp = document.getElementById('lock-input');
+    if (inp) inp.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') checkLock();
+    });
+  });
+</script>
+
+<header>
+  <div class="icon">🌱</div>
+  <h1 id="title-ja">野菜カレンダー<span>Vegetable Growing Calendar</span></h1>
+  <p class="subtitle" id="subtitle-text">種まき・苗の植え付け・収穫の時期がひと目でわかる / Sowing · Transplant · Harvest at a glance</p>
+</header>
+
+<!-- Language toggle -->
+<div class="lang-bar">
+  <button class="lang-btn active" onclick="setLang('ja')">🇯🇵 日本語</button>
+  <button class="lang-btn" onclick="setLang('en')">🇬🇧 English</button>
+  <button class="lang-btn" onclick="setLang('both')">両方 / Both</button>
+</div>
+
+<!-- Search -->
+<div class="search-wrap">
+  <span class="search-icon">🔍</span>
+  <input class="search-input" id="search-input" type="text"
+    placeholder="野菜を検索 / Search vegetables..."
+    oninput="onSearch(this.value)">
+  <button class="search-clear" id="search-clear" onclick="clearSearch()">✕</button>
+</div>
+
+<div id="search-results" style="display:none">
+  <div class="search-result-badge" id="search-badge"></div>
+  <div id="search-list"></div>
+</div>
+
+<div id="main-content">
+<div class="tab-bar">
+  <button class="tab-btn active" id="tab-calendar" onclick="switchTab('calendar')">📅 <span class="t" data-ja="月別" data-en="By Month"></span></button>
+  <button class="tab-btn" id="tab-list" onclick="switchTab('list')">📋 <span class="t" data-ja="野菜一覧" data-en="Vegetables"></span></button>
+  <button class="tab-btn" id="tab-herb" onclick="switchTab('herb')">🌿 <span class="t" data-ja="薬草・山菜" data-en="Herbs &amp; Wild Veg"></span></button>
+  <button class="tab-btn" id="tab-weed" onclick="switchTab('weed')">🌱 <span class="t" data-ja="畑の草" data-en="Field Weeds"></span></button>
+  <button class="tab-btn" id="tab-perennial" onclick="switchTab('perennial')">🌳 <span class="t" data-ja="多年草" data-en="Perennials"></span></button>
+  <button class="tab-btn" id="tab-fruit" onclick="switchTab('fruit')">🍎 <span class="t" data-ja="果樹" data-en="Fruit Trees"></span></button>
+</div>
+
+<div id="calendar-view">
+  <div class="month-scroll" id="month-scroll"></div>
+  <div id="season-badge" class="season-badge"></div>
+  <div id="veg-list"></div>
+</div>
+
+<div id="list-view" style="display:none">
+  <div id="all-veg-list"></div>
+</div>
+
+<div id="herb-view" style="display:none">
+  <div id="all-herb-list"></div>
+</div>
+
+<div id="weed-view" style="display:none">
+  <div id="all-weed-list"></div>
+</div>
+
+<div id="perennial-view" style="display:none">
+  <div id="all-perennial-list"></div>
+</div>
+
+<div id="fruit-view" style="display:none">
+  <div id="all-fruit-list"></div>
+</div>
+
+</div><!-- end main-content -->
+
+<div class="footer">※ Timing is approximate for Kansai–Kanto region / 関西〜関東標準の目安です</div>
+
+<script>
+let currentLang = 'ja';
+
+const vegetables = [
+  // 2月〜
+  { name: "わけぎ", yomi: "わけぎ", en: "Wakegi (Bunching Onion)", emoji: "🧅", sow: [2,3,9,10], seedling: [], harvest: [4,5,11,12], notes: "球根を植えて育てるネギの仲間。春と秋の年2回楽しめる。葉が柔らかく辛みが少ないので薬味・お浸し・炒め物に重宝する。プランターでも育てやすい。", notesEn: "A bulb-planted relative of green onion. Can be harvested twice a year in spring and autumn. Soft leaves with mild flavor, great as garnish, boiled, or stir-fried. Easy to grow in containers.", recipe: "ぬた（酢味噌和え）：茹でたわけぎを甘めの酢味噌で和えるだけ。春の定番。", storage: "収穫後は束にして冷蔵庫の野菜室へ。乾燥しないよう湿らせた新聞紙に包むと1週間ほど保存できる。" },
+  // 3月〜
+  { name: "じゃがいも", yomi: "じゃがいも", en: "Potato", emoji: "🥔", sow: [3], seedling: [], harvest: [6,7], notes: "種芋を切って植える。芽かきをすることで大きな芋に育つ。土寄せを忘れずに行うと緑化を防げる。収穫後は風通しの良い場所で保存する。", notesEn: "Plant cut seed potatoes. Remove extra sprouts to grow larger tubers. Hill soil around stems to prevent greening. Store in a cool, well-ventilated place after harvest.", recipe: "シンプル肉じゃが：だし・醤油・みりん・砂糖で玉ねぎ・にんじん・豚肉と一緒に煮るだけ。定番の和食。", storage: "冷暗所（10〜15℃）で保存。光が当たると緑化して毒素が出るので注意。新聞紙に包むとさらに長持ち。" },
+  { name: "さといも", yomi: "さといも", en: "Taro", emoji: "🫚", sow: [3,4], seedling: [], harvest: [10,11,12], notes: "種芋を植えて育てる。高温多湿を好み、乾燥が苦手なのでマルチングが効果的。親芋の周りに子芋・孫芋がたくさんできる。煮物・汁物・けんちん汁などに欠かせない。", notesEn: "Grows from seed taro. Prefers heat and humidity; mulching helps retain moisture. Produces many small corms around the parent. Essential for simmered dishes and soups.", recipe: "里芋の煮っころがし：だし・醤油・みりん・砂糖で転がしながら炊くだけ。シンプルで深い味わい。", storage: "土付きのまま新聞紙に包んで冷暗所（10℃以上）で保存。低温に弱いので冷蔵庫には入れない。" },
+  { name: "さつまいも", yomi: "さつまいも", en: "Sweet Potato", emoji: "🍠", sow: [4,5], seedling: [5,6], harvest: [9,10], notes: "つる苗を植えて育てる。高温乾燥に強く手がかからない。肥料が多すぎると葉ばかり茂って芋が育たない「つるぼけ」になるので注意。収穫後は数日乾燥させると甘みが増す。", notesEn: "Grown from vine cuttings. Tolerates heat and drought well. Too much fertilizer causes leafy growth with few tubers. Curing for a few days after harvest increases sweetness.", recipe: "大学芋：揚げたさつまいもに醤油・砂糖・みりんのたれをからめるだけ。ごまを振って完成。", storage: "収穫後2週間ほど風通しよく乾燥させてから、新聞紙に包んで冷暗所（13〜15℃）で保存。低温に弱いので冷蔵庫は不可。" },
+  { name: "山芋", yomi: "やまいも", en: "Japanese Yam", emoji: "🍠", sow: [3,4], seedling: [], harvest: [10,11,12], notes: "種芋やむかごを植える。深く根を伸ばすので、深く耕すか専用の筒を使うと収穫しやすい。葉のわきにできるむかごも食べられる。すりおろしてとろろにするほか、焼いても美味。", notesEn: "Plant seed tubers or bulbils. Requires deep soil preparation or special growing tubes for easy harvest. Small bulbils from leaf axils are also edible. Delicious grated or grilled.", recipe: "とろろ汁：すりおろした山芋にだし・醤油・みりんを加えるだけ。麦ご飯にかけて食べると絶品。", storage: "切り口があるものはラップして冷蔵庫へ。丸ごとは新聞紙に包んで冷暗所で1ヶ月以上保存できる。" },
+  { name: "菊芋", yomi: "きくいも", en: "Jerusalem Artichoke", emoji: "🌻", sow: [3,4], seedling: [], harvest: [10,11,12], notes: "塊茎を植えると毎年育つ多年草。放任でもよく育ち、背が2m以上になることもある。秋に黄色い花を咲かせ観賞にも。イヌリンを豊富に含み、血糖値の上昇を抑える健康野菜として注目されている。", notesEn: "A perennial grown from tubers that returns each year. Very easy-care and can grow over 2 meters tall. Bears beautiful yellow flowers in autumn. Rich in inulin, valued as a health food for blood sugar management.", recipe: "菊芋の素揚げ塩味：薄切りにして素揚げし、塩を振るだけ。ポリポリと止まらないおいしさ。", storage: "泥付きのまま新聞紙に包んで冷暗所か冷蔵庫の野菜室で保存。乾燥に弱いので早めに使う。" },
+  { name: "蓮根", yomi: "れんこん", en: "Lotus Root", emoji: "🪷", sow: [3,4], seedling: [], harvest: [10,11,12,1,2], notes: "種蓮根を水田や大型容器に植える。泥の中でれんこんが育つ。夏に美しい花が咲く。穴の開いた独特の形が特徴で、シャキシャキとした食感を楽しめる。", notesEn: "Plant seed lotus root in paddy or large container with mud. Beautiful flowers bloom in summer. Known for its unique hole-filled structure and satisfying crunchy texture.", recipe: "れんこんのきんぴら：薄切りにして醤油・みりん・砂糖で炒めるだけ。七味を加えると大人味に。", storage: "泥付きは冷暗所で保存。洗ったものは酢水にさらしてラップし冷蔵庫へ。1週間ほどで使い切る。" },
+  { name: "くわい", yomi: "くわい", en: "Arrowhead (Kuwai)", emoji: "🌱", sow: [4,5], seedling: [], harvest: [11,12], notes: "おせち料理に欠かせない縁起物の水生野菜。「芽が出る」ことから出世・繁栄の象徴とされる。水田や大型の水鉢で栽培する。球茎の先端から長い芽が伸びるのが特徴。ほくほくとした食感と独特のほろ苦みがある。", notesEn: "A water vegetable essential in Japanese New Year cuisine and considered auspicious because it sprouts a long shoot symbolising advancement and prosperity. Grown in paddy or large water containers. The corm with its long protruding sprout is distinctive. Has a floury texture with a pleasant mild bitterness.", recipe: "くわいの素揚げ：そのまま油で揚げて塩を振るだけ。ほくほくとした食感とほろ苦みが絶品。おせちには甘辛く煮るのが定番。", storage: "土付きのまま湿らせた新聞紙に包んで冷蔵庫の野菜室で2〜3週間保存できる。乾燥させないことがポイント。" },
+  { name: "ごぼう", yomi: "ごぼう", en: "Burdock Root", emoji: "🌿", sow: [3,4], seedling: [], harvest: [10,11,12], notes: "直まきで育てる。根が深く伸びるので深く耕すか、袋栽培も便利。発芽率が低めなので多めにまくと安心。食物繊維が豊富で、きんぴらや煮物に欠かせない野菜。", notesEn: "Direct sow in deeply tilled soil, or try bag cultivation for easy harvest. Germination rate can be low, so sow generously. Rich in dietary fiber; essential for stir-fries and simmered dishes.", recipe: "ごぼうのきんぴら：ごぼうとにんじんを千切りにして醤油・みりん・砂糖・ごま油で炒めるだけ。", storage: "土付きのまま新聞紙に包んで常温の冷暗所で保存。洗ったものは水に浸けて冷蔵庫で1週間ほど。" },
+  { name: "葉ごぼう", yomi: "はごぼう", en: "Leaf Burdock", emoji: "🌿", sow: [3,4], seedling: [], harvest: [5,6,7], notes: "根ではなく若い葉と茎を食べる品種。根ごぼうより短期間で収穫できる。アクが少なく、炒め物やきんぴら・天ぷらに向く。大阪・堺地方の伝統野菜でもある。", notesEn: "A variety grown for its tender young leaves and stems rather than the root. Harvested faster than root burdock. Low bitterness; great for stir-fries, kinpira, and tempura. A traditional vegetable of the Sakai area in Osaka.", recipe: "葉ごぼうの炒め煮：茎を斜め切りにしてごま油で炒め、だし・醤油・みりんで味付け。アクが少なく食べやすい。", storage: "鮮度が落ちやすいので収穫後すぐに使うのが基本。湿らせた新聞紙に包んで冷蔵庫で2〜3日以内に。" },
+  { name: "山わさび（西洋わさび）", yomi: "やまわさび せいようわさび", en: "Horseradish", emoji: "🌿", sow: [3,4], seedling: [], harvest: [10,11,12,1,2,3], notes: "根茎を植えると毎年育つ多年草。一度根付くと旺盛に広がる。根をすりおろすと強い辛みと香りがある。北海道では「山わさび」として醤油漬けや肉料理の薬味として広く使われる。", notesEn: "A perennial grown from rhizomes that spreads vigorously once established. Grating the root produces a strong, pungent flavor. In Hokkaido it is widely used as a condiment in soy sauce pickles and meat dishes.", recipe: "山わさびの醤油漬け：すりおろした根に醤油をひたひたに注ぐだけ。ご飯や豆腐・刺身の薬味に最高。", storage: "すりおろしたものは冷蔵で1週間、冷凍で3ヶ月保存可能。根のまま土に埋めておくと春まで持つ。" },
+  { name: "アスパラガス", yomi: "あすぱらがす", en: "Asparagus", emoji: "🌱", sow: [3,4], seedling: [4,5], harvest: [4,5,6], notes: "定植後2〜3年間は株を充実させることが大切で、焦らず育てる。一度根付けば10年以上収穫できる長命な野菜。春に太い若芽が次々と出てくる。グリルや炒め物、スープに幅広く使える。", notesEn: "Takes 2–3 years after planting before a full harvest, but can produce for over 10 years. Thick young shoots emerge in spring. Versatile for grilling, stir-frying, and soups.", recipe: "アスパラの素焼きバター醤油：フライパンで焼いてバター・醤油をからめるだけ。旨みが際立つシンプルレシピ。", storage: "切り口を水に浸してコップに立て、袋をかぶせて冷蔵庫へ。穂先を上にして立てると鮮度が長持ち。" },
+  { name: "セロリ", yomi: "せろり", en: "Celery", emoji: "🌿", sow: [3,4], seedling: [4,5], harvest: [6,7,8,9], notes: "低温で発芽しやすく、高温に弱い。水分を好むのでこまめな水やりが必要。独特の香りは好みが分かれるが、スープやシチューに入れると風味が増す。生のままスティックにしてもおいしい。", notesEn: "Germinates well in cool temperatures but dislikes heat. Needs regular watering. Its distinctive aroma enhances soups and stews. Also great eaten raw as a crudité.", recipe: "セロリの浅漬け：斜め薄切りにして塩もみし、しょうが・醤油・ごま油で和えるだけ。さっぱりとした和風の一品。", storage: "茎と葉を切り分けてそれぞれ保存袋に入れ冷蔵庫へ。葉は刻んで冷凍すると料理にいつでも使える。" },
+  { name: "トマト", yomi: "とまと", en: "Tomato", emoji: "🍅", sow: [3,4], seedling: [4,5], harvest: [7,8,9], notes: "日当たりと水はけの良い場所を好む。わき芽を取り1本仕立てにすると実つきがよくなる。雨に当たると裂果しやすいので雨除けが有効。追肥は第1花房の実がついたころから始める。", notesEn: "Prefers full sun and well-drained soil. Remove side shoots and grow to a single stem for better fruiting. A rain cover reduces cracking. Start fertilizing when the first cluster sets fruit.", recipe: "トマトの塩昆布和え：ざく切りトマトに塩昆布・ごま油・少量の砂糖を混ぜるだけ。冷やして食べると最高。", storage: "熟したものは冷蔵庫の野菜室で保存。大量に収穫したらざく切りにして冷凍すると料理に使いやすい。" },
+  { name: "アイコ", yomi: "あいこ", en: "Aiko (Mini Tomato)", emoji: "🍅", sow: [3,4], seedling: [4,5], harvest: [7,8,9,10], notes: "楕円形でぷっくりとした人気ミニトマト品種。糖度が高く皮が薄くて食べやすい。鈴なりに実り、一房に多くの実をつける。普通のトマトより育てやすく家庭菜園向き。", notesEn: "A popular oval-shaped mini tomato with high sugar content and thin skin. Bears fruit abundantly in large clusters. Easier to grow than regular tomatoes, ideal for home gardens.", recipe: "アイコのマリネ：半分に切ってオリーブオイル・塩・バジル・酢で和えるだけ。そのまま食べても最高。", storage: "常温で保存が基本。大量に採れたらヘタを取って冷凍保存。凍ったままソースや煮込みに使える。" },
+  { name: "麗夏", yomi: "れいか", en: "Reika (Tomato)", emoji: "🍅", sow: [3,4], seedling: [4,5], harvest: [7,8,9], notes: "裂果しにくく病気に強い大玉トマトの優良品種。皮が厚めで果肉がしっかりしている。食味が良く、生食はもちろんソースや加熱調理にも向く。プロ農家にも人気の品種。", notesEn: "A premium large tomato variety resistant to cracking and disease. Thick-skinned with firm flesh. Excellent flavor for fresh eating as well as sauces and cooking. Popular among professional growers.", recipe: "トマトの丸ごとだし煮：出汁・醤油・みりんで丸ごとゆっくり煮るだけ。旨みが凝縮した和風トマト煮。", storage: "常温で追熟させてから食べるのがベスト。熟したものは冷蔵庫の野菜室で1週間ほど。" },
+  { name: "ストロベリートマト（食用ほおずき）", yomi: "すとろべりーとまと しょくようほおずき", en: "Strawberry Tomato (Physalis)", emoji: "🫧", sow: [3,4], seedling: [4,5], harvest: [8,9,10], notes: "ほおずきに似た袋状のガクに包まれた実が特徴。完熟するとガクが茶色くなり自然に落ちる。糖度が高くトロピカルな甘みがある。そのまま食べるほか、ジャムやデザートにも向く。", notesEn: "Fruit is enclosed in a papery husk similar to a tomatillo. When ripe, the husk turns brown and the fruit drops naturally. Tropical sweetness with high sugar content. Eat fresh or use in jams and desserts.", recipe: "食用ほおずきのはちみつヨーグルト添え：そのままヨーグルトとはちみつをかけるだけ。デザートに最高。", storage: "ガクのまま保存すると長持ち。常温で2週間、冷蔵庫で1ヶ月ほど保存できる。" },
+  { name: "ナス", yomi: "なす", en: "Eggplant", emoji: "🍆", sow: [3,4], seedling: [5,6], harvest: [7,8,9,10], notes: "暑さに強く夏野菜の代表格。肥料と水を十分に与えると長期間収穫できる。真夏に一度切り戻し「更新剪定」をすると秋ナスが楽しめる。焼きナス・煮物・漬物など料理の幅が広い。", notesEn: "A quintessential summer vegetable that thrives in heat. With adequate water and fertilizer it produces for a long season. Cutting back in midsummer encourages a fresh autumn harvest. Versatile for grilling, simmering, and pickling.", recipe: "焼きナス：直火またはグリルで皮が真っ黒になるまで焼き、皮をむいて醤油・しょうが・鰹節をかけるだけ。", storage: "低温に弱いので冷蔵庫に入れる場合は野菜室で。常温（20℃以下の冷暗所）で数日保存可。大量のときは揚げてから冷凍。" },
+  { name: "水ナス", yomi: "みずなす", en: "Mizu Nasu (Water Eggplant)", emoji: "🍆", sow: [3,4], seedling: [5,6], harvest: [7,8,9], notes: "大阪・泉州地方の伝統的なナス。皮が薄く果肉に水分が多くてやわらかい。手で割るとみずみずしい断面が現れる。生でそのまま食べられる珍しいナスで、ぬか漬けにすると特においしい。辛子醤油・塩もみでシンプルに味わうのが一番。", notesEn: "A traditional eggplant from the Senshu area of Osaka. Thin skin with very juicy, tender flesh. Can be eaten raw, which is rare for eggplant. Outstanding pickled in rice bran. Best enjoyed simply with mustard soy sauce or salt.", recipe: "水ナスの浅漬け：手でちぎって塩・昆布・鷹の爪でもみ込むだけ。みずみずしさを活かしたシンプルな一品。", storage: "低温に弱いので常温の冷暗所か冷蔵庫の野菜室へ。水分が多いので傷みやすく2〜3日以内に使い切る。" },
+  { name: "勘九郎（ナス）", yomi: "かんくろう なす", en: "Kankuro Eggplant", emoji: "🍆", sow: [3,4], seedling: [5,6], harvest: [7,8,9,10], notes: "大阪・泉州地方の伝統的な大型ナス。果肉が厚くてアクが少なく、とろけるような食感が特徴。焼きナスや田楽にすると特においしい。近年は幻のナスとして注目されている希少品種。", notesEn: "A large traditional eggplant from the Senshu area of Osaka. Thick flesh, low bitterness, and a meltingly tender texture. Exceptional for grilled eggplant and dengaku. A rare heirloom variety gaining renewed attention.", recipe: "田楽：半分に切ってグリルで焼き、味噌・みりん・砂糖を合わせた田楽味噌を塗って仕上げるだけ。", storage: "勘九郎ナスは大型なので、すぐに使う分だけ収穫するのがベスト。収穫後は常温で2〜3日以内に調理を。" },
+  { name: "ピーマン", yomi: "ぴーまん", en: "Bell Pepper", emoji: "🫑", sow: [3,4], seedling: [5], harvest: [7,8,9], notes: "暑さに強く、実がなり始めると次々と収穫できる。実が大きくなりすぎる前に収穫すると株が疲れにくい。緑のうちに収穫するが、完熟させると赤くなり甘みが増す。炒め物・肉詰めなど料理の幅が広い。", notesEn: "Heat-tolerant and produces continuously once fruiting starts. Harvesting before fruits get too large keeps the plant vigorous. Green when picked, but fully ripe red fruits are sweeter. Great for stir-fries and stuffed pepper dishes.", recipe: "ピーマンの醤油炒め：ごま油で炒めてちりめんじゃこ・醤油・みりんで味付け。ご飯が進む一品。", storage: "水気をふき取ってポリ袋に入れ冷蔵庫の野菜室へ。大量のときはヘタと種を除いて冷凍保存。" },
+  { name: "ししとう", yomi: "ししとう", en: "Shishito Pepper", emoji: "🫑", sow: [3,4], seedling: [5], harvest: [7,8,9,10], notes: "ピーマンの仲間で辛みが少ない品種。ただし同じ株でも時々辛いものが混じる。実がやわらかいうちに収穫する。丸ごと素焼きや炒め物にするとシンプルにおいしい。夏の定番野菜。", notesEn: "A mild relative of the bell pepper, though occasionally a spicy one appears. Harvest while fruits are still tender. Delicious simply grilled whole or stir-fried. A classic summer vegetable.", recipe: "ししとうの素焼き：丸ごとフライパンで焼いて焦げ目をつけ、醤油をたらして鰹節をのせるだけ。", storage: "ポリ袋に入れて冷蔵庫の野菜室で保存。1週間ほどで使い切る。多いときは冷凍保存も可。" },
+  { name: "万願寺とうがらし", yomi: "まんがんじとうがらし", en: "Manganji Pepper", emoji: "🫑", sow: [3,4], seedling: [5], harvest: [7,8,9,10], notes: "京野菜の代表品種のひとつ。大型で肉厚なのに辛みがなく甘みが強い。種を取り除いて丸ごと素焼きや炒め物にするのが定番。ししとうの約5〜6倍の大きさがあり食べごたえがある。", notesEn: "One of the most celebrated Kyoto vegetables. Large and thick-fleshed with no heat and a sweet flavor. Traditionally grilled whole or stir-fried after removing seeds. About 5–6 times larger than shishito peppers and very satisfying.", recipe: "万願寺とうがらしの素焼きじゃこ炒め：丸ごとまたは縦割りにして炒め、ちりめんじゃこ・醤油・みりんで仕上げる。", storage: "ポリ袋に入れて冷蔵庫の野菜室で1週間ほど保存可能。大量のときは素焼きして冷凍保存。" },
+  { name: "鷹の爪", yomi: "たかのつめ", en: "Takanotsume (Hot Pepper)", emoji: "🌶️", sow: [3,4], seedling: [5], harvest: [8,9,10], notes: "日本の伝統的な辛味唐辛子。カプサイシンを豊富に含み強い辛みがある。完熟した赤い実を収穫して乾燥させると長期保存できる。きんぴらや麻婆豆腐など辛み付けに欠かせない。", notesEn: "A traditional Japanese chili rich in capsaicin with intense heat. Harvest ripe red fruits and dry them for long-term storage. Indispensable for adding spice to kinpira, mapo tofu, and other dishes.", recipe: "鷹の爪の醤油漬け：乾燥させた鷹の爪を輪切りにして醤油に漬けるだけ。薬味醤油として何にでも使える。", storage: "赤く熟したものをネットに入れて風通しの良い場所で2〜3週間乾燥させると1年以上保存できる。" },
+  { name: "キャベツ", yomi: "きゃべつ", en: "Cabbage", emoji: "🥬", sow: [3,4,7,8], seedling: [4,5,9,10], harvest: [6,7,11,12], notes: "春まきと秋まきの年2回楽しめる。結球するまで青虫やアオムシなど害虫に注意が必要。外葉が枯れてきたら収穫のサイン。生食・炒め物・煮込みなど用途が幅広い万能野菜。", notesEn: "Can be grown twice a year with spring and autumn sowings. Watch carefully for caterpillars and other pests until heading. Harvest when outer leaves start to dry. An incredibly versatile vegetable for raw, stir-fried, or stewed dishes.", recipe: "キャベツの塩昆布もみ：ざく切りにして塩昆布と手でもみ込むだけ。すぐ食べられる簡単浅漬け。", storage: "芯をくり抜いて濡れた新聞紙を詰め、ポリ袋に入れて冷蔵庫へ。使いかけはラップして芯側から使う。" },
+  { name: "ケール", yomi: "けーる", en: "Kale", emoji: "🥬", sow: [3,4,8,9], seedling: [4,5,9,10], harvest: [5,6,7,10,11,12], notes: "ビタミンやミネラルが豊富な栄養価の高い野菜。寒さに強く霜に当たるとさらに甘みが増す。外葉から順番に収穫していけば長期間楽しめる。青汁の原料としても有名だが、炒め物やスープにも向く。", notesEn: "Packed with vitamins and minerals, making it one of the most nutritious vegetables. Very cold-hardy; frost enhances its sweetness. Harvest outer leaves progressively for a long season. Famous as a green juice ingredient but also great sautéed or in soups.", recipe: "ケールのごま和え：茹でて水気を絞り、すりごま・醤油・みりん・砂糖で和えるだけ。苦みが和らぐ。", storage: "濡れた新聞紙に包んでポリ袋に入れ冷蔵庫の野菜室へ。1週間ほど保存できる。" },
+  { name: "ほうれん草", yomi: "ほうれんそう", en: "Spinach", emoji: "🥬", sow: [3,4,9,10], seedling: [], harvest: [5,6,11,12], notes: "直まきで育てる冷涼好みの葉野菜。酸性土壌を嫌うので石灰で中和してから種をまく。寒さに当たると甘みが増す。鉄分・ビタミンが豊富でお浸し・炒め物・汁物に幅広く使える。", notesEn: "A cool-season leafy vegetable for direct sowing. Dislikes acidic soil, so lime the bed before sowing. Cold weather intensifies its sweetness. Rich in iron and vitamins; great for boiled, stir-fried, or soup dishes.", recipe: "ほうれん草のお浸し：茹でて水気を絞り、だし醤油をかけて鰹節をのせるだけ。定番の和の一品。", storage: "茹でてから冷凍保存が便利。生のままは濡れた新聞紙に包んで立てて冷蔵庫へ。3〜4日以内に使う。" },
+  { name: "小松菜", yomi: "こまつな", en: "Komatsuna", emoji: "🥬", sow: [3,4,9,10], seedling: [], harvest: [5,6,11,12], notes: "病害虫に強く育てやすい江戸時代からの伝統野菜。周年栽培が可能でプランターでも育つ。カルシウムが豊富でほうれん草より栄養価が高いとも言われる。お浸し・炒め物・味噌汁に重宝する。", notesEn: "A traditional vegetable from the Edo era, resistant to pests and easy to grow year-round. Calcium-rich and often considered more nutritious than spinach. Great for boiling, stir-frying, and miso soup.", recipe: "小松菜と油揚げの煮びたし：だし・醤油・みりんで油揚げと一緒にさっと煮るだけ。ほっこりとした和の味。", storage: "濡れた新聞紙に包んで冷蔵庫へ。大量のときは茹でてから水気を絞って冷凍保存すると便利。" },
+  { name: "水菜", yomi: "みずな", en: "Mizuna", emoji: "🥬", sow: [3,4,9,10], seedling: [], harvest: [5,6,11,12], notes: "生育が早く、種まきから約1ヶ月で収穫できる。シャキシャキとした食感が特徴でサラダに向く。辛みが少なくクセがないので鍋物の具材としても定番。京野菜のひとつで京都発祥の品種。", notesEn: "Fast-growing and ready to harvest about one month after sowing. Crisp texture makes it ideal for salads. Mild flavor makes it a classic ingredient in hot pot dishes. One of the traditional Kyoto vegetables.", recipe: "水菜のサラダ：生のまま食べやすい長さに切り、油揚げを焼いて細切りにしたものと合わせてポン酢で。", storage: "濡れた新聞紙に包んでポリ袋に入れ冷蔵庫へ。3〜4日で使い切る。洗ってから保存しない。" },
+  { name: "わさび菜", yomi: "わさびな", en: "Wasabi Greens", emoji: "🌿", sow: [3,4,9,10], seedling: [], harvest: [5,6,11,12], notes: "ピリッとしたわさびに似た辛みが特徴のからし菜の仲間。寒くなるほど辛みと風味が増す。サラダや薬味として生で使うのが一番おいしい。葉が大きくなりすぎると辛みが強くなるので早めに収穫する。", notesEn: "A mustard green relative with a distinctive wasabi-like kick. Flavor and spiciness intensify in cold weather. Best eaten raw in salads or as a garnish. Harvest while young before leaves get too large and overly pungent.", recipe: "わさび菜のおにぎり：刻んだわさび菜に塩・ごま油を混ぜてご飯に混ぜるだけ。ピリ辛が食欲をそそる。", storage: "濡れた新聞紙に包んで冷蔵庫の野菜室へ。3日以内に使い切るのがベスト。" },
+  { name: "べんり菜", yomi: "べんりな", en: "Benrina (Multipurpose Green)", emoji: "🥬", sow: [3,4,9,10], seedling: [], harvest: [5,6,11,12], notes: "小松菜とチンゲン菜を交配した品種で、両方の良さを持つ。茎が太く歯ごたえがあり、葉は柔らかい。炒め物・お浸し・汁物・漬物など幅広い料理に使える万能野菜。育てやすく家庭菜園向き。", notesEn: "A cross between komatsuna and bok choy, combining the best of both. Thick, crunchy stems with tender leaves. Truly multipurpose: stir-fries, boiled, soups, and pickles. Easy to grow and well-suited to home gardens.", recipe: "べんり菜のさっと炒め：ごま油でにんにくと一緒に炒め、塩・醤油で味付け。シャキシャキ感が美味しい。", storage: "濡れた新聞紙に包んでポリ袋に入れ冷蔵庫で保存。4〜5日以内に使い切る。" },
+  { name: "ふだん草（スイスチャード）", yomi: "ふだんそう すいすちゃーど", en: "Swiss Chard", emoji: "🌈", sow: [3,4,9,10], seedling: [], harvest: [5,6,7,8,11,12], notes: "赤・黄・オレンジ・白など茎の色が鮮やかで観賞用にもなる。暑さにも寒さにも強く長期間収穫できる。ほうれん草のような食感で炒め物・お浸し・パスタに向く。ビタミンやミネラルが豊富。", notesEn: "Stems come in vivid red, yellow, orange, and white—ornamental as well as edible. Tolerates both heat and cold for a long harvest season. Spinach-like texture great for stir-fries, boiling, and pasta. Rich in vitamins and minerals.", recipe: "ふだん草の胡麻酢和え：茹でて水気を絞り、すりごま・酢・砂糖・醤油で和えるだけ。カラフルで食卓が華やぐ。", storage: "茎と葉を切り分けて保存袋に入れ冷蔵庫へ。3〜4日以内に使う。茎は固めなので別々に料理するとよい。" },
+  { name: "レタス", yomi: "れたす", en: "Lettuce", emoji: "🥗", sow: [3,4,9], seedling: [4,5,10], harvest: [5,6,11], notes: "高温に弱いので春と秋が育てやすいシーズン。結球する前に外葉から順に収穫するリーフレタスとして使うこともできる。水はけが良く有機質の豊富な土を好む。サラダの定番野菜。", notesEn: "Dislikes heat, so spring and autumn are the best seasons. Can also be harvested leaf by leaf as loose-leaf lettuce before heading. Prefers well-drained, humus-rich soil. The classic salad green.", recipe: "レタスのしゃぶしゃぶ：熱々のだし汁にレタスをさっとくぐらせてポン酢で。火を通すとカサが減りたっぷり食べられる。", storage: "芯の切り口に濡れたキッチンペーパーを当て、ポリ袋に入れて冷蔵庫へ。外葉から使うと長持ち。" },
+  { name: "サニーレタス", yomi: "さにーれたす", en: "Leaf Lettuce (Red)", emoji: "🥗", sow: [3,4,9], seedling: [4,5,10], harvest: [5,6,11], notes: "結球しないリーフレタスの仲間で葉の縁が赤く美しい。外葉から順に収穫していけば長期間楽しめる。アントシアニンを含み栄養価も高い。サラダはもちろん、料理の飾り付けにも映える。", notesEn: "A loose-leaf variety with beautiful red-tinged edges that never forms a head. Harvest outer leaves progressively for a long season. Rich in anthocyanins. Excellent in salads and as a colorful garnish.", recipe: "サニーレタスの肉巻きサラダ：外側の大きな葉で豚しゃぶを包んで食べる。ポン酢とよく合う。", storage: "洗わずに保存袋に入れて冷蔵庫へ。食べる直前に洗う。芯の切り口に濡れペーパーを当てると長持ち。" },
+  { name: "ロメインレタス", yomi: "ろめいんれたす", en: "Romaine Lettuce", emoji: "🥗", sow: [3,4,9], seedling: [4,5,10], harvest: [5,6,11], notes: "縦長に結球する直立型のレタス。他のレタスより暑さに強く夏場も育てやすい。シャキシャキとした歯ごたえが特徴で、シーザーサラダには欠かせない品種。ビタミンAが豊富。", notesEn: "An upright, elongated heading lettuce. More heat-tolerant than other varieties and easier to grow in summer. Known for its crisp texture; the essential lettuce for Caesar salad. Rich in vitamin A.", recipe: "シンプルシーザー風サラダ：手でちぎり、マヨネーズ・粉チーズ・にんにく・レモン汁を和えるだけ。", storage: "外葉から順に使い、切り口にラップをして冷蔵庫へ。芯を落とさずに保存すると鮮度が保てる。" },
+  { name: "ちしゃ", yomi: "ちしゃ", en: "Chisha Lettuce", emoji: "🥬", sow: [3,4,9], seedling: [4,5], harvest: [5,6,10,11], notes: "日本在来のレタスで古くから親しまれてきた。直まきでも育てやすく初心者向け。葉は柔らかくほのかな苦みがある。焼肉を包んで食べる「包みちしゃ」に使うとおいしい。", notesEn: "A traditional Japanese lettuce variety with a long history. Easy to direct sow, suitable for beginners. Soft leaves with a mild bitterness. Delicious used to wrap grilled meat in the traditional style.", recipe: "包みちしゃ：大きめの葉に焼肉や酢飯を包んで食べる。葉が大きく柔らかいので包みやすい。", storage: "濡れた新聞紙に包んでポリ袋に入れ冷蔵庫へ。2〜3日で使い切るのが理想。" },
+  { name: "三つ葉", yomi: "みつば", en: "Mitsuba", emoji: "🌿", sow: [3,4,9], seedling: [], harvest: [5,6,10,11], notes: "半日陰でも育つ日本のハーブ。独特の爽やかな香りが料理のアクセントになる。茶碗蒸し・お吸い物・炊き込みご飯の仕上げに少量のせるだけで風味が増す。湿り気のある場所を好む。", notesEn: "A Japanese herb that grows even in partial shade. Its distinctive fresh aroma adds depth to cooking. Just a small amount on top of steamed egg custard, clear soup, or rice enhances the flavor beautifully. Prefers moist conditions.", recipe: "三つ葉のお吸い物：昆布だしに醤油・塩で味を調え、三つ葉をひと束入れるだけ。香りがふわっと広がる。", storage: "根付きのものは水を入れたコップに立てて冷蔵庫へ。切り落としたものは湿らせたペーパーで包み保存。" },
+  { name: "にんじん", yomi: "にんじん", en: "Carrot", emoji: "🥕", sow: [3,4,7,8], seedling: [], harvest: [6,7,10,11], notes: "直まきで育てる。発芽に光が必要なので土をかけすぎないようにする。発芽までの間は土が乾かないよう水やりが重要。β-カロテンが豊富で生食・炒め物・スープに万能。春まきと秋まきの2回楽しめる。", notesEn: "Direct sow and avoid covering seeds too deeply as they need light to germinate. Keep soil moist until sprouts appear. Rich in beta-carotene and versatile raw, stir-fried, or in soups. Can be grown in both spring and autumn.", recipe: "にんじんのきんぴら：千切りにしてごま油で炒め、醤油・みりん・砂糖で味付けしごまを振るだけ。", storage: "葉がついているものは葉を切り落として保存。新聞紙に包んで冷蔵庫の野菜室へ。1ヶ月近く保存可能。" },
+  { name: "かぶ", yomi: "かぶ", en: "Turnip", emoji: "⚪", sow: [3,4,9,10], seedling: [], harvest: [5,6,11,12], notes: "直まきで育て、間引きながら育てる。生育が早く種まきから約40〜60日で収穫できる。葉も食べられるので捨てずに利用する。漬物・煮物・サラダなど幅広い使い方ができる。", notesEn: "Direct sow and thin progressively. Fast-growing and ready to harvest in about 40–60 days. The leaves are also edible — don\'t waste them. Versatile for pickles, simmered dishes, and salads.", recipe: "かぶの浅漬け：薄切りにして塩もみし、柚子の皮・昆布・鷹の爪を加えるだけ。かぶの甘みが引き立つ。", storage: "葉と根を切り分けて別々に保存。根は新聞紙に包んで冷蔵庫へ。葉は刻んで塩もみして冷蔵保存。" },
+  { name: "二十日大根", yomi: "はつかだいこん にじゅうにちだいこん", en: "Radish", emoji: "🔴", sow: [3,4,5,9,10], seedling: [], harvest: [4,5,6,10,11], notes: "名前の通り約20〜30日で収穫できる最速野菜のひとつ。プランターや小さなスペースでも育てられる。大きくなりすぎると中がスポンジ状になるので早めに収穫する。初心者の入門野菜としておすすめ。", notesEn: "True to its name, one of the fastest vegetables, ready in just 20–30 days. Can be grown in containers or small spaces. Harvest promptly as the inside becomes spongy if left too long. An ideal starter vegetable for beginners.", recipe: "二十日大根のバター醤油炒め：半分に切ってバターで炒め、醤油をひとたらし。葉も一緒に炒めると美味。", storage: "葉と根を切り分けて保存袋に入れ冷蔵庫へ。収穫後は鮮度が落ちやすいので3日以内に使い切る。" },
+  { name: "ネギ", yomi: "ねぎ", en: "Green Onion", emoji: "🧅", sow: [3,4], seedling: [5,6], harvest: [10,11,12,1], notes: "長ネギ・葉ネギなど品種が豊富。土寄せを繰り返すことで白い部分が伸びて甘みが増す。薬味として日本料理に欠かせない存在。冬に収穫すると糖度が上がりより甘くなる。🌱 株分けは生育期の春（3〜4月）または秋（9〜10月）が適期。大きく育った親株を掘り起こし根元をほぐして3〜4本ずつに分けて植え替えることで約10〜30倍に増やすことができる。🔗 <a href=\'https://sakata-tsushin.com/lesson-vegetable/detail_21/\' target=\'_blank\' style=\'color:#16a34a;\'>詳しい育て方はこちら</a>", notesEn: "Many varieties including Welsh onion and leaf types. Repeated hilling extends the white part and increases sweetness. Sweetness increases further when harvested in winter. 🌱 Divide in spring or autumn into groups of 3–4 stems to multiply by 10–30 times. 🔗 <a href=\'https://sakata-tsushin.com/lesson-vegetable/detail_21/\' target=\'_blank\' style=\'color:#16a34a;\'>Growing guide</a>", recipe: "焼きネギの甘酢味噌がけ：丸ごとグリルで焼いて甘めの味噌を塗るだけ。ネギの甘みが最大限に引き出される。", storage: "新聞紙に包んで冷暗所か冷蔵庫の野菜室へ。斜め薄切りにして冷凍しておくと薬味にいつでも使える。" },
+  { name: "九条ネギ", yomi: "くじょうねぎ", en: "Kujo Negi (Kyoto Green Onion)", emoji: "🧅", sow: [3,4,8,9], seedling: [4,5], harvest: [6,7,10,11,12], notes: "京都・九条地区発祥の葉ネギ系品種。葉が柔らかく甘みと香りが強い。白い部分より緑の葉の部分を主に食べる。薬味・鍋料理・焼きネギなど幅広く使われる京野菜の代表格。🌱 <a href=\'https://ummkt.com/blog/5914#google_vignette\' target=\'_blank\' style=\'color:#16a34a;\'>株分けによる増やし方はこちら</a>　🔗 <a href=\'https://www.sudofarm.net/20191025negi/\' target=\'_blank\' style=\'color:#16a34a;\'>詳しい解説はこちら</a>", notesEn: "A leaf-type green onion from the Kujo district of Kyoto. Soft leaves with a strong sweet aroma. Mainly eaten for the green leaves. A signature Kyoto vegetable. 🌱 <a href=\'https://ummkt.com/blog/5914\' target=\'_blank\' style=\'color:#16a34a;\'>Propagation by division</a>　🔗 <a href=\'https://www.sudofarm.net/20191025negi/\' target=\'_blank\' style=\'color:#16a34a;\'>Detailed guide</a>", recipe: "九条ネギたっぷり鶏すき焼き：鶏もも肉と九条ネギを甘辛い割り下で煮るだけ。ネギの甘みが溶け出して絶品。", storage: "濡れた新聞紙に包んでポリ袋に入れ冷蔵庫へ。小口切りにして冷凍保存するとそのまま薬味に使える。" },
+  { name: "石倉根太ネギ", yomi: "いしくらねぶとねぎ", en: "Ishikura Negi (Root Onion)", emoji: "🧅", sow: [3,4,9,10], seedling: [4,5], harvest: [6,7,11,12], notes: "白根が長く太くなる一本ネギの品種。土寄せをしっかり行うと白い部分が長く伸びる。甘みが強く柔らかいので鍋料理・すき焼き・焼きネギに最適。寒くなるほど甘みが増す。", notesEn: "A single-stem variety that develops a long, thick white base. Thorough hilling extends the pale white portion. Sweet and tender, ideal for hot pot, sukiyaki, and grilled leek. Sweetness deepens in cold weather.", recipe: "石倉ネギの丸焼き：丸ごとグリルで焦げ目がつくまで焼き、かつお醤油で。とろとろの甘みが格別。", storage: "泥付きのまま新聞紙に包んで冷暗所へ。収穫後も畑の土に立てて保存すると長期間鮮度を保てる。" },
+  { name: "ニラ", yomi: "にら", en: "Chinese Chives", emoji: "🌿", sow: [3,4], seedling: [], harvest: [5,6,7,8,9,10], notes: "一度植えると毎年春から秋にかけて何度も刈り取れる多年草。根元から5cmほど残して刈ると再生する。独特の風味が餃子・炒め物・スープに欠かせない。花ニラや黄ニラなど品種も豊富。🌱 <a href=\'https://agri.mynavi.jp/2020_06_24_122483/#toc-7\' target=\'_blank\' style=\'color:#16a34a;\'>株分けによる増やし方はこちら</a>", notesEn: "A perennial that regrows repeatedly from spring to autumn once established. Cut leaving about 5 cm above the base to encourage regrowth. Essential for gyoza, stir-fries, and soups. 🌱 <a href=\'https://agri.mynavi.jp/2020_06_24_122483/#toc-7\' target=\'_blank\' style=\'color:#16a34a;\'>How to propagate by division</a>", recipe: "ニラ玉：ごま油でニラを炒め、溶き卵を流し込んで半熟に。醤油をひとたらしして完成。シンプルで最高の味。", storage: "濡れた新聞紙に包んでポリ袋に入れ冷蔵庫へ。3〜4日で使い切る。刻んで醤油漬けにすると保存食にも。" },
+  // 4月〜
+  { name: "しょうが", yomi: "しょうが", en: "Ginger", emoji: "🫚", sow: [4,5], seedling: [], harvest: [10,11], notes: "種しょうがを植えて育てる。高温多湿を好み、乾燥や直射日光を嫌う。葉が黄色くなったら収穫のサイン。新しょうが・根しょうが・葉しょうがとして時期を変えて楽しめる。薬効も高い。", notesEn: "Grown from seed ginger rhizomes. Loves heat and humidity but dislikes drought and harsh direct sun. Yellow leaves signal harvest time. Can be enjoyed as young ginger, mature ginger, or leaf ginger at different stages. Also valued for its medicinal properties.", recipe: "しょうがの甘酢漬け（紅しょうが）：薄切りにして塩もみし、甘酢に漬けるだけ。お弁当や焼きそばの添えに。", storage: "新しょうがは濡れた新聞紙に包んで冷蔵庫へ。根しょうがは砂や土に埋めて冷暗所で長期保存できる。" },
+  { name: "山椒（木の芽）", yomi: "さんしょう きのめ", en: "Japanese Pepper / Sansho (Kinome)", emoji: "🌿", sow: [3,4], seedling: [3,4], harvest: [4,5,6,7,8,9,10], notes: "日本固有のスパイス植物。春の若葉「木の芽」は爽やかな香りとほのかな辛みがあり、吸い物・和え物・木の芽田楽・ちらし寿司の飾りに使われる。初夏の「花山椒」は佃煮に、夏の青い実は醤油漬けや佃煮に、秋に熟した実を乾燥させると粉山椒になりうなぎ・焼き鳥の薬味に欠かせない。雌雄異株で実を採るには雌株が必要。一度植えると毎年収穫できる落葉低木。半日陰でも育つ。", notesEn: "A spice shrub unique to Japan. The young spring leaves (kinome) have a fresh aroma and mild tingle, used in clear soups, dressed dishes, and as garnish. Summer flower buds make a flavourful tsukudani. Green berries are pickled in soy sauce; dried ripe berries become sansho powder, the essential condiment for eel and yakitori. Dioecious — a female plant is needed for berries. A deciduous shrub that produces every year; tolerates partial shade.", recipe: "木の芽味噌：白みそに砂糖・みりんを混ぜて練り、摘みたての木の芽をすり鉢ですって混ぜ込むだけ。田楽・焼き野菜にのせると春の香りが広がる。 / 実山椒の醤油漬け：青い実を塩茹でして醤油・みりんに漬けるだけ。ご飯のお供に最高。", storage: "木の芽は濡れたキッチンペーパーに包んで冷蔵庫へ。2〜3日以内に使う。冷凍保存すると色が悪くなるので早めに。実は醤油漬けか乾燥させて保存する。" },
+  { name: "茶の木（お茶）", yomi: "ちゃのき おちゃ", en: "Tea Plant (Camellia sinensis)", emoji: "🍵", sow: [3,4,9,10], seedling: [3,4], harvest: [4,5,6,7,8,9,10], notes: "緑茶・ほうじ茶・紅茶・ウーロン茶すべて同じ木から作られる。一度植えると毎年収穫できる常緑低木。春の一番茶（4〜5月）が最も香り高く上質。摘んだ葉を蒸して揉んで乾燥させると緑茶になる。発酵させると紅茶・ウーロン茶に。カテキン・カフェイン・テアニンを含み抗酸化・リラックス効果がある。日当たりの良い酸性土壌を好み、剪定で低くコンパクトに管理できる。庭木としても美しく白い花が秋に咲く。", notesEn: "Green tea, hojicha, black tea, and oolong all come from the same plant. An evergreen shrub that can be harvested every year once established. The first flush in spring (April–May) yields the most fragrant and prized leaves. Steamed, rolled, and dried leaves become green tea; fermented leaves become black tea or oolong. Rich in catechins, caffeine, and theanine with antioxidant and relaxing properties. Prefers acidic, well-drained soil in full sun. Manageable by pruning and bears attractive white flowers in autumn.", recipe: "手作り緑茶：摘んだ新芽を蒸して（1〜2分）、手で揉みながら乾燥させるだけ。市販品とは違う生き生きとした香りが楽しめる。 / ほうじ茶：乾燥させた茶葉をフライパンで中火で5〜10分炒るだけ。香ばしい香りが広がる。", storage: "乾燥させた茶葉は密閉容器（缶や瓶）に入れ冷暗所か冷蔵庫で保存。湿気・光・臭いを嫌うので注意。開封後は1〜2ヶ月以内に使い切る。" },
+  { name: "らっきょう", yomi: "らっきょう", en: "Rakkyo (Chinese Scallion)", emoji: "🧅", sow: [4,5,8,9], seedling: [], harvest: [5,6], notes: "球根を植えて育てる。秋に植えると翌年初夏に収穫できる。独特の辛みと香りがある。甘酢漬けや塩漬けにするのが定番で、カレーの添え物としてもおなじみ。連作を避けて育てる。", notesEn: "Grown from bulbs; plant in autumn to harvest the following early summer. Has a distinctive pungent flavor. Traditionally pickled in sweet vinegar or salt, and a classic accompaniment to curry. Avoid growing in the same spot each year.", recipe: "らっきょうの甘酢漬け：塩もみして水洗いし、甘酢（酢・砂糖・塩）に漬けるだけ。2週間後から食べられる。", storage: "漬けたものは冷蔵庫で1年以上保存可能。生のらっきょうは冷蔵庫で1〜2週間。早めに漬けるのがコツ。" },
+  { name: "落花生", yomi: "らっかせい", en: "Peanut", emoji: "🥜", sow: [4,5], seedling: [], harvest: [9,10], notes: "花が落ちた後に子房柄が地中に潜り込み実が育つ独特の作物。直まきで育てる。ゆで落花生は収穫したての生のものを使う。保存する場合は乾燥させてから保管する。暖かい気候を好む。", notesEn: "A unique plant where the flower stalk pushes into the ground after blooming, developing the pod underground. Direct sow. Freshly harvested nuts are perfect for boiling. Dry thoroughly for storage. Prefers warm climates.", recipe: "塩ゆで落花生：収穫したての生落花生を塩水でじっくり40〜60分ゆでるだけ。採れたてにしか味わえない絶品。", storage: "生のものはすぐに塩ゆでにするかよく乾燥させて保存。乾燥させたものは常温の冷暗所で数ヶ月保存可。" },
+  { name: "キュウリ", yomi: "きゅうり", en: "Cucumber", emoji: "🥒", sow: [4,5], seedling: [5,6], harvest: [7,8], notes: "ネットや支柱を使って縦に誘引する。水分が90%以上を占め、夏の水分補給に最適。実は成長が早いので毎日チェックして大きくなりすぎる前に収穫する。浅漬けや酢の物に欠かせない。", notesEn: "Train up a net or support stake. Over 90% water content makes it perfect for summer hydration. Fruits grow very quickly so check daily and harvest before they get too large. Essential for quick pickles and vinegared dishes.", recipe: "<a href='https://cookpad.com/jp/recipes/19935993' target='_blank'>きゅうりの甘酢しょうが醤油漬け</a>：大量に採れたときに。冷蔵庫で長期保存できる常備菜。", storage: "ヘタを上にして立てて保存袋に入れ冷蔵庫へ。大量のときは塩もみして甘酢漬けにすると1ヶ月保存できる。" },
+  { name: "ゴーヤ", yomi: "ごーや", en: "Bitter Melon", emoji: "🟢", sow: [4,5], seedling: [5,6], harvest: [7,8,9], notes: "ネットに絡ませてグリーンカーテンとして利用できる省エネ野菜。独特の苦みがあるが塩もみや下茹ではすることで和らぐ。ビタミンCが豊富で夏バテ予防に効果的。沖縄料理のチャンプルーには欠かせない。", notesEn: "An energy-saving vegetable that doubles as a green curtain on a trellis. Its characteristic bitterness softens with salting or blanching. Rich in vitamin C, effective against summer fatigue. Indispensable in Okinawan champuru stir-fry.", recipe: "ゴーヤチャンプルー：薄切りにして塩もみ→豆腐・豚肉・卵と炒め、醤油・かつお節で仕上げるだけ。", storage: "種とワタを取り出して薄切りにして冷凍保存すると料理にすぐ使える。常温の冷暗所で2〜3日保存可。" },
+  { name: "スイカ", yomi: "すいか", en: "Watermelon", emoji: "🍉", sow: [4], seedling: [5], harvest: [7,8], notes: "広いスペースとたっぷりの日照が必要。人工授粉を行うと確実に実がつく。受粉日を記録しておくと収穫時期の目安になる。熟すと「ポンポン」と澄んだ音がする。夏の代表的な果実野菜。", notesEn: "Needs ample space and full sun. Hand-pollinating ensures fruit set. Record the pollination date as a harvest guide. A ripe watermelon gives a clear, resonant sound when tapped. The quintessential summer fruit-vegetable.", recipe: "スイカジュース：適当に切ってミキサーにかけるだけ。塩をひとつまみ加えると甘みが増す。", storage: "丸ごとは冷暗所で保存。カットしたものはラップして冷蔵庫で2〜3日以内に食べ切る。" },
+  { name: "メロン", yomi: "めろん", en: "Melon", emoji: "🍈", sow: [4], seedling: [5], harvest: [7,8], notes: "着果後は1株あたり1〜2個に絞ると大きく甘い実になる。果皮にネットが入るのが完熟のサイン。水やりが多すぎると甘みが落ちるので収穫前は控える。温度管理が重要な高級野菜。", notesEn: "Limit to 1–2 fruits per plant for large, sweet melons. A netted skin pattern signals full ripeness. Reduce watering before harvest to concentrate sweetness. Temperature management is key for this premium crop.", recipe: "メロンの冷やし生ハム添え：冷やしたメロンに生ハムを巻くだけ。甘みと塩気の絶妙な組み合わせ。", storage: "収穫後は常温で2〜3日追熟させてから冷蔵庫へ。カットしたものはラップして2日以内に食べる。" },
+  { name: "なりくらまくわうり", yomi: "なりくらまくわうり まくわ まくわうり", en: "Narikura Makuwa Melon", emoji: "🍐", sow: [4,5], seedling: [5], harvest: [7,8], notes: "関西地方に伝わる伝統的な東洋系メロン。暑さに強く病気にも比較的強い。ほのかな甘みと爽やかな香りが特徴。昔から農家で親しまれてきた品種で、完熟すると黄色く色づく。", notesEn: "A traditional Oriental melon variety passed down in the Kansai region. Tolerant of heat and relatively disease-resistant. Known for its gentle sweetness and refreshing aroma. A long-loved variety among farmers; turns yellow when fully ripe.", recipe: "まくわうりの冷やし食べ：冷蔵庫でよく冷やして半分に切り、スプーンで種を取ってそのまま食べる。シンプルが一番。", storage: "常温で追熟させてから冷蔵庫へ。カットしたものはラップして冷蔵庫で2日以内に食べる。" },
+  { name: "かぼちゃ", yomi: "かぼちゃ", en: "Pumpkin", emoji: "🎃", sow: [4,5], seedling: [5], harvest: [8,9], notes: "つる性で広いスペースが必要。人工授粉を行うと実がつきやすい。収穫後2〜3週間追熟させると甘みが増す。βカロテンやビタミンCが豊富な栄養野菜。煮物・スープ・天ぷらなど和食にも洋食にも合う。", notesEn: "Vining plant that needs plenty of space. Hand-pollinating improves fruit set. Curing for 2–3 weeks after harvest boosts sweetness. Rich in beta-carotene and vitamin C. Works beautifully in both Japanese and Western-style dishes.", recipe: "かぼちゃの煮物：だし・醤油・みりん・砂糖で皮ごと煮るだけ。ほっくり甘くて定番のおかず。", storage: "丸ごとは冷暗所で2〜3ヶ月保存可能。カットしたものは種とワタを取り除きラップして冷蔵庫へ1週間。" },
+  { name: "ズッキーニ", yomi: "ずっきーに", en: "Zucchini", emoji: "🥒", sow: [4,5], seedling: [5], harvest: [6,7,8,9], notes: "かぼちゃの仲間だがつるが伸びにくくコンパクトに育てられる。雌花に人工授粉すると実がよくつく。実は20cm前後で収穫するとやわらかくおいしい。大きくなりすぎると味が落ちるので早めに収穫する。", notesEn: "A compact relative of pumpkin that doesn\'t spread widely. Hand-pollinate female flowers for better fruiting. Harvest at around 20 cm for the best texture. Flavor declines if left too long, so harvest promptly.", recipe: "ズッキーニの塩炒め：輪切りにしてごま油で炒め、塩・こしょうするだけ。シンプルで甘みが際立つ。", storage: "ラップして冷蔵庫の野菜室へ。1週間ほどで使い切る。大量のときは薄切りにして塩もみ→冷凍保存。" },
+  { name: "大葉", yomi: "おおば しそ", en: "Shiso (Green)", emoji: "🌿", sow: [4,5], seedling: [5,6], harvest: [7,8,9,10], notes: "しそとも呼ばれる日本の代表的なハーブ。独特の爽やかな香りが食欲を増進させる。そうめん・刺身・天ぷら・薬味として幅広く使われる。花穂や実も食べられる。摘心すると長期間収穫できる。", notesEn: "Also called shiso, one of Japan\'s most iconic herbs. Its fresh, distinctive aroma stimulates appetite. Used widely with somen noodles, sashimi, tempura, and as a garnish. Flower spikes and seeds are also edible. Pinching the tip extends the harvest season.", recipe: "大葉の醤油漬け：大葉をきれいに洗い、醤油・みりん・にんにくで漬けるだけ。ご飯のお供に最高。", storage: "茎を水に浸してコップに立て、袋をかぶせて冷蔵庫へ。1〜2週間保存できる。大量のときは塩漬けに。" },
+  { name: "赤紫蘇", yomi: "あかじそ", en: "Red Shiso", emoji: "🌿", sow: [4,5], seedling: [5,6], harvest: [7,8], notes: "梅干しに鮮やかな赤色をつけるために使われる伝統的なハーブ。アントシアニンを豊富に含む。大葉と同じく育てやすく手がかからない。ジュースや酢漬けにすると鮮やかな赤色が楽しめる。", notesEn: "A traditional herb used to give umeboshi their vivid red color. Rich in anthocyanins. As easy to grow as green shiso. Makes a beautiful deep-red juice or vinegar pickle.", recipe: "赤紫蘇ジュース：赤紫蘇を煮出し、砂糖とクエン酸（または酢）を加えるだけ。鮮やかな赤紫色が美しい。", storage: "塩もみして灰汁を出してから冷凍保存するか、梅干しと一緒に漬けると長期保存できる。" },
+  { name: "エゴマ", yomi: "えごま", en: "Perilla (Egoma)", emoji: "🌿", sow: [5,6], seedling: [], harvest: [8,9], notes: "シソ科の植物で大葉に似ているが香りが異なる。葉・実・油がすべて食べられる栄養価の高い植物。オメガ3脂肪酸を豊富に含む。韓国料理では肉を包む葉として使われる。日本でも健康食として再注目されている。", notesEn: "Related to shiso but with a different aroma. Leaves, seeds, and oil are all edible and highly nutritious. Rich in omega-3 fatty acids. Used in Korean cuisine to wrap grilled meat. Gaining renewed attention in Japan as a health food.", recipe: "エゴマの醤油漬け：葉を洗い、醤油・みりん・にんにくに漬けるだけ。ご飯に巻いて食べると絶品。", storage: "葉は大葉と同様に水に浸けて冷蔵庫へ。実は乾燥させてから瓶に入れて常温保存。" },
+  { name: "バジル", yomi: "ばじる", en: "Basil", emoji: "🌿", sow: [4,5], seedling: [5,6], harvest: [6,7,8,9,10], notes: "イタリア料理に欠かせないハーブ。高温多湿を好み、気温が上がるとどんどん育つ。花芽が出たら摘み取ることで長期間葉を収穫できる。トマトと相性が抜群で、一緒に植えるとお互いの生育を助ける。", notesEn: "An indispensable herb in Italian cooking. Thrives in warm, humid conditions and grows vigorously in summer heat. Pinch off flower buds regularly to keep harvesting leaves for longer. Pairs wonderfully with tomatoes and benefits from being planted nearby.", recipe: "バジルの醤油和え：ざく切りにして醤油・ごま油・砂糖で和えるだけ。和風バジルソースとして何にでも合う。", storage: "茎を水に浸して常温保存（冷蔵庫は黒くなるのでNG）。大量のときはオリーブオイルと一緒にミキサーして冷凍。" },
+  { name: "フェンネル", yomi: "ふぇんねる", en: "Fennel", emoji: "🌿", sow: [3,4,9], seedling: [4,5], harvest: [6,7,8,10,11], notes: "甘いアニス香が特徴のハーブ。葉・茎・種・根元すべて食べられる。球状に膨らんだ根元（フィノッキオ）は生でも加熱しても美味。魚料理との相性が特に良い。丈夫で育てやすい多年草。", notesEn: "An herb with a sweet anise-like aroma. Leaves, stems, seeds, and bulb are all edible. The swollen bulb base (finocchio) is delicious raw or cooked. Pairs especially well with fish. A hardy perennial that is easy to grow.", recipe: "フェンネルの浅漬け：根元を薄切りにして塩・酢・砂糖で漬けるだけ。シャキシャキと爽やかな風味が楽しめる。", storage: "葉は水に浸して冷蔵庫へ。根元の球茎はラップして冷蔵庫で1週間ほど保存できる。種は乾燥させて密閉保存。" },
+  { name: "アーティチョーク", yomi: "あーてぃちょーく", en: "Artichoke", emoji: "🌸", sow: [3,4], seedling: [4,5], harvest: [5,6,7], notes: "地中海原産の大型多年草。つぼみを食用にする珍しい野菜。一度植えると毎年収穫できる。花が開く前の若いつぼみを収穫し、がくの根元の肉質部分とハートと呼ばれる芯を食べる。見た目が美しく庭の観賞用にもなる。", notesEn: "A large Mediterranean perennial grown for its edible flower buds. Once established, produces every year. Harvest young buds before flowers open; eat the fleshy base of the bracts and the heart. Beautiful enough to double as an ornamental plant.", recipe: "アーティチョークの塩茹で：丸ごと塩水で30〜40分茹で、がくを1枚ずつはがしてマヨネーズや醤油につけて食べる。", storage: "収穫後は鮮度が落ちやすい。ラップして冷蔵庫で3〜4日以内に使う。茹でてから冷凍保存も可能。" },
+  { name: "ドラゴンヘッド（モルドバ）", yomi: "どらごんへっど もるどば", en: "Dracocephalum (Moldova)", emoji: "🌿", sow: [4,5], seedling: [5], harvest: [6,7,8], notes: "レモンに似た爽やかな香りを持つハーブ。モルドバ種は特に香りが強い品種。ハーブティーにするほか、料理の香りづけやデザートにも使える。薄紫色の花も美しく観賞用にもなる。", notesEn: "An herb with a refreshing lemon-like fragrance. The Moldova variety is especially aromatic. Great for herbal tea, culinary seasoning, and desserts. Delicate pale purple flowers make it ornamental too.", recipe: "ドラゴンヘッドのハーブティー：生か乾燥させた葉を熱湯で3〜5分蒸らすだけ。レモンのような爽やかな香りを楽しめる。", storage: "乾燥させて瓶に入れて保存すると1年以上使える。生葉は湿らせた新聞紙に包んで冷蔵庫で数日保存。" },
+  { name: "いんげん", yomi: "いんげん", en: "Green Bean", emoji: "🫘", sow: [4,5,6], seedling: [], harvest: [6,7,8,9], notes: "つるあり品種は支柱が必要だが多収穫。つるなし品種は支柱不要で省スペース。暖かくなったら種まきし、霜には弱い。炒め物・天ぷら・おひたし・サラダなど幅広く使える夏野菜の定番。", notesEn: "Pole varieties need support but yield heavily; bush types need no support and save space. Sow after the weather warms as they are frost-sensitive. A summer staple for stir-fries, tempura, boiled dishes, and salads.", recipe: "いんげんの胡麻和え：塩茹でして水気を切り、すりごま・醤油・砂糖で和えるだけ。定番の副菜。", storage: "ポリ袋に入れて冷蔵庫へ。大量のときは塩茹でして冷凍保存すると1ヶ月以上使える。" },
+  { name: "つるなしいんげん", yomi: "つるなしいんげん", en: "Bush Bean", emoji: "🫘", sow: [4,5,6], seedling: [], harvest: [6,7,8,9], notes: "支柱が不要で管理が楽なコンパクトなインゲン。プランターや狭い場所でも栽培できる。つるありより早く収穫できる品種が多い。柔らかく食べやすいので子どもにも人気の野菜。", notesEn: "A compact bean that needs no staking, making it very easy to manage. Perfect for containers and small spaces. Many varieties mature faster than pole beans. Tender and easy to eat, popular with children.", recipe: "つるなしいんげんのバター炒め：ヘタを取ってバターで炒め、塩コショウするだけ。シンプルで甘みが際立つ。", storage: "ポリ袋に入れて冷蔵庫の野菜室で4〜5日保存可能。塩茹でして冷凍すると便利。" },
+  { name: "金時いんげん", yomi: "きんときいんげん", en: "Kintoki Bean", emoji: "🫘", sow: [4,5,6], seedling: [], harvest: [8,9,10], notes: "赤紫色の斑模様が美しい大型のインゲン豆。北海道を中心に栽培される。乾燥豆として保存し、煮豆・赤飯・甘納豆などに使う。ビタミンやミネラルが豊富で栄養価が高い。", notesEn: "A large bean with beautiful reddish-purple mottled markings, grown mainly in Hokkaido. Stored as dried beans and used in simmered dishes, red rice, and sweet bean confections. Rich in vitamins and minerals.", recipe: "金時豆の甘煮：一晩水に浸けてから砂糖・醤油でゆっくり煮るだけ。お正月のお節料理にも欠かせない。", storage: "乾燥豆は密閉容器に入れて冷暗所で1年以上保存可能。煮豆は冷蔵庫で1週間、冷凍で1ヶ月。" },
+  { name: "米", yomi: "こめ", en: "Rice", emoji: "🌾", sow: [4,5], seedling: [5,6], harvest: [9,10], notes: "苗代で育てた苗を5〜6月に田植えする。水管理が非常に重要で、時期によって水位を調整する。出穂後は水をしっかり管理して登熟を促す。日本の主食として欠かせない穀物。", notesEn: "Seedlings are raised in a nursery bed and transplanted in May–June. Water management is critical, with levels adjusted by growth stage. Maintain good water conditions after heading to ensure good grain fill. Japan\'s staple cereal grain.", recipe: "新米のおにぎり：採れたての新米を少し固めに炊いて、塩と好みの具で握るだけ。新米の甘みを一番感じられる食べ方。", storage: "精米後は密閉容器に入れて冷蔵庫または冷暗所で保存。玄米なら15℃以下の冷暗所で半年以上保存可。" },
+  { name: "ひえ（稗）", yomi: "ひえ ひえのくさ", wikiSearch: "稗", en: "Japanese Millet / Barnyard Grass (Hie)", emoji: "🌾", sow: [5,6], seedling: [], harvest: [9,10], notes: "縄文時代から栽培されてきた日本最古の穀物のひとつ。痩せた土地や乾燥にも強く育てやすい。グルテンフリーで鉄分・食物繊維が豊富な健康穀物として近年再注目されている。白米に混ぜて炊くと栄養価が上がる。雑穀米の定番食材。\n⚠️ 栽培種の稗と水田雑草のヒエ（ノビエ）は別物。雑草ヒエはイネに酷似し水田で最も問題になる難防除雑草で、除草剤の多くがヒエ対策に使われる。", notesEn: "One of Japan\'s oldest cultivated grains, grown since the Jomon period. Highly resilient in poor soils and dry conditions. A gluten-free health grain rich in iron and dietary fibre. Mix with white rice to boost nutrition.\n⚠️ Note: cultivated millet (hie) and barnyard grass weed (nobie) are different plants. The weed closely resembles rice and is the most troublesome weed in paddies.", recipe: "雑穀ご飯：白米に10〜20%のひえを混ぜて普通に炊くだけ。プチプチした食感と栄養価がアップ。", storage: "精白したものは密閉容器に入れて冷蔵庫か冷暗所で保存。玄穀は常温の冷暗所で6ヶ月以上保存できる。" },
+  { name: "あわ（粟）", yomi: "あわ", en: "Foxtail Millet (Awa)", emoji: "🌾", sow: [5,6], seedling: [], harvest: [9,10], notes: "縄文・弥生時代から栽培される伝統的な雑穀。鉄分・ビタミンB群・マグネシウムが豊富でグルテンフリー。黄色い小粒が特徴で、白米に混ぜて炊く雑穀米や粟ご飯・あわもちに使われる。お正月の鏡餅やお供えにも使われる縁起物。痩せた土地でも育つ強健な作物。", notesEn: "A traditional millet cultivated since the Jomon and Yayoi periods. Rich in iron, B vitamins, and magnesium, and gluten-free. Recognised by its small yellow grains and used in multi-grain rice, awa rice, and awa-mochi pounded cakes. Also used in New Year\'s offerings and considered auspicious. A hardy crop that thrives even in poor soil.", recipe: "粟ご飯：白米に10〜20%の粟を加えて炊くだけ。黄色い粒がきれいで食感も楽しい。おにぎりにしても美味。", storage: "密閉容器に入れて冷蔵庫か冷暗所で保存。玄穀は常温の冷暗所で6ヶ月以上保存できる。" },
+
+  // 5月〜
+  { name: "オクラ", yomi: "おくら", en: "Okra", emoji: "🌿", sow: [5,6], seedling: [], harvest: [7,8,9], notes: "暑さに強い夏野菜。実が育ちすぎると固くなるので5〜7cmのうちに毎日収穫する。ネバネバ成分のペクチンやムチンが含まれ健康に良い。炒め物・天ぷら・サラダなど幅広く使える。", notesEn: "A heat-loving summer vegetable. Harvest daily when pods are 5–7 cm before they toughen. Contains pectin and mucin for health benefits. Versatile for stir-fries, tempura, and salads.", recipe: "オクラの塩昆布和え：輪切りにして塩昆布・ごま油で和えるだけ。ネバネバと塩昆布の旨みが絶品。", storage: "ポリ袋に入れて冷蔵庫の野菜室へ。2〜3日以内に使う。大量のときは茹でて冷凍保存が便利。" },
+  { name: "白オクラ", yomi: "しろおくら", en: "White Okra", emoji: "🤍", sow: [5,6], seedling: [], harvest: [7,8,9], notes: "緑オクラに比べてアクが少なく柔らかい。実が白いので収穫タイミングがわかりやすい。生でも食べられるほど柔らかく、サラダやそのままスライスして食べるのがおすすめ。見た目も美しい珍しい品種。", notesEn: "Less bitter and more tender than green okra. The white color makes it easy to judge harvest timing. Tender enough to eat raw; great sliced in salads. A beautiful and unusual variety.", recipe: "白オクラの生スライス：生のまま薄い輪切りにして、だし醤油やポン酢をかけるだけ。白い断面が美しい一品。", storage: "緑オクラより柔らかいので早めに使う。ポリ袋に入れて冷蔵庫で2日以内に。" },
+  { name: "ダビデの星（スターオブデイビッド）", yomi: "だびでのほし すたーおぶでいびっど", en: "Star of David Okra", emoji: "⭐", sow: [5,6], seedling: [], harvest: [7,8,9], notes: "切ると断面が六角形の星型になる珍しいオクラ品種。イスラエル原産とされる。大きくなっても普通のオクラより柔らかく食べやすい。見た目のインパクトが大きくSNSでも人気がある。", notesEn: "An unusual okra variety with a hexagonal star-shaped cross-section. Said to originate from Israel. Stays tender even when larger than typical okra. Its striking appearance makes it popular on social media.", recipe: "ダビデの星の輪切りサラダ：輪切りにして星型を見せながらツナ・マヨネーズで和えるだけ。見た目も楽しい。", storage: "他のオクラと同様に、ポリ袋に入れて冷蔵庫の野菜室で2〜3日以内に使い切る。" },
+  { name: "枝豆", yomi: "えだまめ", en: "Edamame", emoji: "🫘", sow: [5,6], seedling: [], harvest: [8,9], notes: "大豆を若採りしたもの。収穫後は鮮度が落ちやすいので、できれば採れたてを茹でてすぐ食べるのが最高においしい。枝ごと収穫して塩茹ですると甘みが増す。ビールとの相性が抜群。", notesEn: "Young soybeans harvested before they mature. Freshness fades quickly after harvest, so boil and eat immediately for the best flavor. Harvesting with the stem intact and boiling in salted water enhances sweetness. The ultimate beer snack.", recipe: "塩茹で枝豆：枝ごとかたい端を切り落とし、塩もみしてから塩水でゆでるだけ。採れたての甘みが最高。", storage: "収穫後すぐに茹でるのがベスト。茹でたものは冷凍保存できる。生のまま冷蔵庫に入れると翌日が限度。" },
+  { name: "ささげ", yomi: "ささげ", en: "Black-eyed Pea (Sasage)", emoji: "🫘", sow: [5,6], seedling: [], harvest: [8,9], notes: "暑さに強くやせた土地でも育つ丈夫な豆。さやごと若採りしてインゲンのように食べるほか、完熟した豆を乾燥させて保存食にもなる。お赤飯や煮豆に使うと上品な仕上がりになる。", notesEn: "Hardy and heat-tolerant, growing well even in poor soil. Young pods can be eaten like green beans; mature beans are dried for storage. Used in red rice and simmered dishes for an elegant result.", recipe: "ささげのお赤飯：もち米と一緒に蒸すだけ。小豆と違い皮が破れにくくお赤飯に最適。おめでたい席に。", storage: "若莢は冷蔵庫で3〜4日。乾燥させた豆は密閉容器で常温1年以上保存可能。" },
+  { name: "小豆", yomi: "あずき", en: "Adzuki Bean", emoji: "🫘", sow: [5,6], seedling: [], harvest: [9,10], notes: "日本の伝統的な豆。暖かい気候を好み、連作を嫌う。莢が茶色くカサカサになったら収穫のサイン。あんこ・ぜんざい・おはぎなど和菓子には欠かせない。ポリフェノールが豊富で栄養価も高い。", notesEn: "A traditional Japanese bean that prefers warm climates and dislikes being grown in the same spot year after year. Harvest when pods turn brown and dry. Essential for sweet red bean paste, zenzai, and ohagi. Rich in polyphenols.", recipe: "ぜんざい：小豆をやわらかくなるまで煮て砂糖で味を調え、焼いた餅を加えるだけ。冬の定番甘味。", storage: "乾燥豆は密閉容器で常温1年以上保存可能。炊いたあんこは冷蔵で1週間、冷凍で3ヶ月保存できる。" },
+  { name: "空心菜", yomi: "くうしんさい", en: "Water Spinach", emoji: "🌿", sow: [5,6], seedling: [], harvest: [7,8,9], notes: "茎が中空になっていることが名前の由来。高温多湿を好む夏の葉物野菜。茎の先端を摘むと脇芽が出て何度も収穫できる。ニンニクやオイスターソースと合わせた炒め物が絶品。", notesEn: "Named for its hollow stem. A summer leafy vegetable that thrives in heat and humidity. Pinching the growing tips encourages side shoots for repeated harvests. Outstanding stir-fried with garlic and oyster sauce.", recipe: "空心菜のにんにく炒め：ごま油でにんにくを炒め、空心菜をさっと炒めて塩・醤油で味付けするだけ。", storage: "鮮度が落ちやすいので収穫後はすぐに使う。濡れた新聞紙に包んで冷蔵庫で2日以内に使い切る。" },
+  { name: "つるむらさき", yomi: "つるむらさき", en: "Malabar Spinach", emoji: "🌿", sow: [5,6], seedling: [], harvest: [7,8,9,10], notes: "暑さに強く夏でも旺盛に育つ葉物野菜。ホウレンソウが育てにくい夏の代替野菜として重宝する。ぬめりがあってカルシウムや鉄分が豊富。お浸し・炒め物・みそ汁の具に向く。", notesEn: "A leafy vegetable that grows vigorously even in summer heat, making it a valuable substitute for spinach when it struggles in warm months. Slightly mucilaginous and rich in calcium and iron. Great boiled, stir-fries, or in miso soup.", recipe: "つるむらさきのお浸し：塩茹でして水気を絞り、だし醤油・鰹節をかけるだけ。ぬめりが苦手な人は茹で時間を短めに。", storage: "鮮度が落ちやすいので収穫後はすぐに使う。冷蔵庫で2日以内に使い切る。" },
+  { name: "金ゴマ", yomi: "きんごま", en: "Golden Sesame", emoji: "🌾", sow: [5,6], seedling: [], harvest: [9,10], notes: "黄金色の美しい実が特徴のゴマ品種。白ゴマや黒ゴマより香りが高く風味豊かと言われる。莢が茶色くなり始めたら収穫し、乾燥させてから脱粒する。すりゴマや練りゴマにすると香りが際立つ。", notesEn: "A sesame variety known for its beautiful golden seeds. Said to be more fragrant and flavorful than white or black sesame. Harvest when pods begin to turn brown, then dry and thresh. The aroma shines in ground or paste form.", recipe: "金ゴマ塩：乾煎りした金ゴマに塩を混ぜるだけ。ご飯・野菜・豆腐など何にでもかけられる万能調味料。", storage: "乾燥させてから密閉容器に入れて冷蔵庫か冷暗所で保存。酸化しやすいので開封後は早めに使い切る。" },
+  { name: "ゴマ", yomi: "ごま", en: "Sesame", emoji: "🌾", sow: [5,6], seedling: [], harvest: [9,10], notes: "白ゴマ・黒ゴマなど品種が豊富。温暖な気候を好み、水はけの良い土で育てる。莢が黄色くなり始めたら早めに収穫し、束ねて逆さに干して脱粒する。栄養価が高くカルシウム・鉄分が豊富。", notesEn: "Comes in white, black, and other varieties. Prefers warm climates and well-drained soil. Harvest when pods start turning yellow, bundle and hang upside down to dry and thresh. Rich in calcium and iron.", recipe: "ゴマ塩おにぎり：煎りゴマに塩を混ぜてご飯に混ぜるだけ。シンプルで香ばしい定番のおにぎり。", storage: "乾燥させてから密閉容器で冷暗所か冷蔵庫へ。酸化しやすいので開封後は早めに使い切る。" },
+  { name: "モロヘイヤ", yomi: "もろへいや", en: "Molokhia", emoji: "🌿", sow: [5,6], seedling: [], harvest: [7,8,9,10], notes: "エジプト発祥の栄養豊富な葉野菜。ネバネバ成分が特徴でカルシウム・ビタミンが豊富。暑さに非常に強く夏の葉物野菜として優秀。茎の先端を摘むと脇芽が出て長期間収穫できる。種には毒性があるので食べないこと。", notesEn: "A highly nutritious leafy vegetable originating from Egypt. Known for its mucilaginous texture and rich in calcium and vitamins. Extremely heat-tolerant and excellent as a summer green. Note: seeds are toxic and should not be eaten.", recipe: "モロヘイヤのお浸し：葉だけ塩茹でして水気を絞り、だし醤油・鰹節をかけるだけ。ネバネバが健康的。", storage: "鮮度が落ちやすいので収穫後すぐに使う。茹でてから冷凍保存すると1ヶ月保存できる。" },
+  { name: "ミント", yomi: "みんと", en: "Mint", emoji: "🌿", sow: [4,5], seedling: [5], harvest: [6,7,8,9,10], notes: "繁殖力が強く放任するとどんどん広がる。プランター栽培か根を仕切ると管理しやすい。スペアミント・ペパーミントなど品種が多い。ハーブティー・料理・お菓子など幅広く使える。", notesEn: "Spreads vigorously if left unchecked. Best grown in containers or with root barriers. Many varieties including spearmint and peppermint. Versatile for herbal teas, cooking, and desserts.", recipe: "ミントティー：生葉5〜6枚を熱湯で3分蒸らすだけ。砂糖を少し加えるとすっきりした甘みが楽しめる。", storage: "茎を水に浸してコップに立て冷蔵庫へ。大量のときは乾燥させて密閉容器に保存。冷凍もできる。" },
+  { name: "アロエ", yomi: "あろえ", en: "Aloe Vera", emoji: "🌵", sow: [4,5], seedling: [5,6], harvest: [1,2,3,4,5,6,7,8,9,10,11,12], notes: "通年収穫できる多肉植物。乾燥に非常に強く手がかからない。観葉植物としても人気が高い。株の周囲に子株が出て増やしやすい。寒さに弱いので冬は室内に取り込む。ベランダや室内でプランター栽培しやすい。", notesEn: "A succulent that can be harvested year-round. Extremely drought-tolerant and low-maintenance. Also popular as a houseplant. Produces offsets freely for easy propagation. Bring indoors in winter as it dislikes frost. Ideal for balcony or indoor container growing.", recipe: "アロエの浅漬け：皮をむいてゼリー部分を薄切りにし、醤油・砂糖・酢・昆布で漬けるだけ。さっぱりとした独特の食感。", storage: "収穫した葉はラップして冷蔵庫で1週間ほど保存できる。ゼリー部分を取り出して冷凍すると長期保存可能。" },
+  { name: "ウコン", yomi: "うこん", en: "Turmeric", emoji: "🟡", sow: [4,5], seedling: [], harvest: [10,11], notes: "しょうがの仲間で根茎を植えて育てる。春ウコン・秋ウコンなど種類がある。葉も大きく観賞価値がある。クルクミンを含み肝臓を守る健康効果で知られる。乾燥させて粉末にするとカレーの香辛料になる。", notesEn: "A relative of ginger grown from rhizomes. Varieties include spring and autumn turmeric. Leaves are large and ornamental. Known for liver-protective health benefits from curcumin. Dried and powdered, it becomes the spice used in curry.", recipe: "ウコン茶：乾燥させたウコンを薄切りにして熱湯で煮出すだけ。はちみつを加えると飲みやすくなる。", storage: "収穫後は乾燥させてから粉末にして密閉容器で保存。生のままなら新聞紙に包んで冷暗所で数ヶ月保存できる。" },
+  { name: "ローゼル", yomi: "ろーぜる", en: "Roselle", emoji: "🌺", sow: [5,6], seedling: [6], harvest: [10,11], notes: "ハイビスカスティーの原料となる南国系植物。鮮やかな赤い萼（がく）を収穫して使う。酸味が強くビタミンCが豊富。ジャム・シロップ・お茶に加工できる。花も観賞価値が高く庭を彩る。", notesEn: "The plant used to make hibiscus tea. The vivid red calyces are harvested and used. Strongly acidic and rich in vitamin C. Can be made into jam, syrup, or tea. The flowers are also ornamentally beautiful in the garden.", recipe: "ローゼルのシロップ漬け：赤い萼を砂糖と水で煮詰めてシロップにするだけ。炭酸で割るとノンアルコールドリンクに。", storage: "乾燥させれば常温で1年以上保存できる。生の萼は冷蔵庫で数日、または砂糖漬けで長期保存。" },
+  { name: "紅花（べにばな）", yomi: "べにばな こうか", en: "Safflower (Benibana)", emoji: "🌸", sow: [4,5], seedling: [], harvest: [6,7], notes: "山形県の県花として有名な伝統的な染料・食用植物。鮮やかな橙〜赤色の花を咲かせ、花びらを乾燥させると紅色の染料になる。種子から搾るサフラワーオイルは食用油として広く使われ、オレイン酸・リノール酸が豊富。若芽はお浸しに、花びらはハーブティーや料理の彩りに使える。漢方では「紅花」として血行促進・月経不順に用いられる生薬でもある。", notesEn: "A traditional dye and food plant famous as the prefectural flower of Yamagata. Bears vivid orange-to-red flowers; dried petals yield a crimson dye. Seeds are pressed for safflower oil, widely used in cooking and rich in oleic and linoleic acids. Young shoots can be boiled, petals used in herbal tea and as a garnish. In herbal medicine, dried flowers improve circulation and regulate menstruation.", recipe: "🍵 紅花ティー：乾燥した花びら小さじ1杯を熱湯で5分蒸らすだけ。ほのかな甘みと美しい金色が楽しめる。 / 🌸 紅ばな餅の作り方：①乾燥紅花をぬるま湯で戻し黄色い水を捨てる（灰汁抜き）②少量のアルカリ水（重曹水）に浸すと鮮やかな紅色に発色する③この紅色の水をもち米やうるち米の生地に混ぜ込む④いつものおはぎや草餅と同様に成形して完成。淡いピンク〜鮮やかな紅色の美しいお餅ができる。 / 🟥 紅餅の作り方：①灰汁抜き済みの紅花をアルカリ水に浸して紅色素を抽出②紅液を和紙やさらし布に薄く塗り広げる③風通しの良い場所でゆっくり乾燥させると玉虫色に輝く紅餅の完成。昔は染料・口紅の原料として保存・流通していた。<a href='https://www.youtube.com/watch?v=MdDMUg08RB8' target='_blank' style='color:#dc2626;'>▶ 紅餅のつくりかた動画</a> / 💄 紅（くちべに）の作り方：①乾燥紅花を水で戻し黄色い汁を丁寧に絞り捨てる②アルカリ水を加えて紅色素（カルタミン）を抽出③小皿や器に薄く塗り広げて乾燥させる④乾くと玉虫色（緑がかった金属光沢）に変化する⑤濡れた紅筆で器の表面をなぞって色素を溶かし唇や頬に塗る。これが江戸時代の本物の紅の使い方。 / 🔗 <a href='https://www.tezomeya.com/jpblog/2018/01/2021-08-28-2104/' target='_blank' style='color:#b45309;'>紅（くちべに）の作り方</a> ／ <a href='https://www.tezomeya.com/jpblog/2021/09/sasabeni/' target='_blank' style='color:#b45309;'>ワークショップはこちら</a> ／ <a href='https://gardenstory.jp/gardens-shops/22660' target='_blank' style='color:#b45309;'>紅ミュージアムはこちら</a> ／ <a href='https://www.koka.ac.jp/lifedesign/news/8500/' target='_blank' style='color:#b45309;'>紅餅で染める</a>", storage: "花びらは十分乾燥させてから密閉容器に入れ冷暗所で1年保存できる。種子（オイル用）は冷暗所で保管。" },
+  { name: "バタフライピー", yomi: "ばたふらいぴー", en: "Butterfly Pea", emoji: "🔵", sow: [5,6], seedling: [6], harvest: [7,8,9,10], notes: "鮮やかなコバルトブルーの花が特徴。花をお茶にするとティールブルーの美しいハーブティーになり、レモン汁を加えると紫色に変化する。タイ料理では着色料としても使われる。つる性で支柱が必要。", notesEn: "Known for its striking cobalt-blue flowers. Steep the flowers for a beautiful teal herbal tea that turns purple when lemon juice is added. Used as a natural food coloring in Thai cuisine. Vining habit requires a support structure.", recipe: "バタフライピーティー：乾燥花5〜6輪を熱湯で3分蒸らすだけ。レモン汁を加えると紫に変わる色の変化を楽しんで。", storage: "花を乾燥させて密閉瓶に入れて保存すると1年以上使える。乾燥が不十分だとカビが生えるので注意。" },
+  // 7月〜
+  { name: "ブロッコリー", yomi: "ぶろっこりー", en: "Broccoli", emoji: "🥦", sow: [7,8], seedling: [8,9], harvest: [11,12,1], notes: "秋まきがメインの冬野菜。頂花蕾を収穫した後も脇芽の側花蕾を収穫して長く楽しめる。蕾が黄色くなる前に収穫するのがポイント。ビタミンCが豊富で栄養価が高く、蒸すと栄養が逃げにくい。", notesEn: "A winter vegetable mainly sown in autumn. After harvesting the central head, side shoots continue to produce for a long season. Harvest before the buds turn yellow. Rich in vitamin C; steaming preserves nutrients best.", recipe: "ブロッコリーの塩昆布和え：塩茹でして小房に分け、塩昆布・ごま油で和えるだけ。簡単なのに旨みたっぷり。", storage: "茹でてから冷凍保存が最も便利。生のものはラップして冷蔵庫の野菜室へ。3〜4日以内に使う。" },
+  { name: "スティックセニョール", yomi: "すてぃっくせにょーる", en: "Broccolini / Stick Senor", emoji: "🥦", sow: [7,8], seedling: [8,9], harvest: [11,12,1,2], notes: "ブロッコリーとカイランを交配させた品種。細い茎と小さな花蕾が特徴で、茎ごと丸ごと食べられる。ブロッコリーより苦みが少なく甘みがある。側枝がたくさん出るので長期間収穫できる。", notesEn: "A cross between broccoli and Chinese kale. Slender stems with small florets eaten whole. Sweeter and less bitter than broccoli. Produces many side shoots for a long harvest season.", recipe: "スティックセニョールのバター醤油炒め：丸ごとフライパンでバター炒めし、醤油をひとたらし。シンプルで甘みが際立つ。", storage: "ラップして冷蔵庫の野菜室へ。3〜4日以内に使う。茹でてから冷凍保存も可。" },
+  { name: "カリフラワー", yomi: "かりふらわー", en: "Cauliflower", emoji: "🤍", sow: [7,8], seedling: [8,9], harvest: [11,12,1], notes: "ブロッコリーの仲間で白い花蕾を食べる野菜。結球するまで外葉で花蕾を包む「軟白処理」をすると白くきれいに仕上がる。ビタミンCが豊富。近年はオレンジや紫のカラフルな品種も人気。", notesEn: "A relative of broccoli with white curds. Tying outer leaves over the head keeps it white and beautiful. Rich in vitamin C. Colorful orange and purple varieties are also popular in recent years.", recipe: "カリフラワーの酢醤油漬け：小房に分けて塩茹でし、醤油・酢・砂糖・鷹の爪に漬けるだけ。さっぱりとした常備菜。", storage: "ラップして冷蔵庫の野菜室へ。1週間ほど保存できる。小房に分けて茹でてから冷凍保存すると便利。" },
+  // 8月〜
+  { name: "大根", yomi: "だいこん", en: "Daikon Radish", emoji: "🫚", sow: [8,9], seedling: [], harvest: [11,12,1], notes: "直まきして間引きながら育てる。霜が当たるとより甘くなる冬の代表的な根菜。大根おろしにすると消化酵素が豊富で消化を助ける。煮物・漬物・サラダ・鍋など用途が非常に広い。", notesEn: "Direct sow and thin progressively. Frost sweetens the root, making it a quintessential winter vegetable. Grated daikon is rich in digestive enzymes. Incredibly versatile in simmered dishes, pickles, salads, and hot pot.", recipe: "大根の煮物（ふろふき大根）：厚切りにして米のとぎ汁でゆで、だしで煮て味噌だれをかけるだけ。冬の定番。", storage: "葉を切り落として新聞紙に包み冷蔵庫か冷暗所へ。大量のときは大根漬け（沢庵・べったら漬け）にして保存食に。" },
+  { name: "時なし大根（春大根）", yomi: "ときなしだいこん はるだいこん", en: "Spring Daikon (All-Season Radish)", emoji: "🫚", sow: [3,4], seedling: [], harvest: [5,6], notes: "春まきができる大根の品種。一般的な大根は春まきすると「とう立ち」しやすいが、時なし大根は耐寒・耐暑性があり春から育てられる。コンパクトなサイズで家庭菜園向き。大根おろし・煮物・浅漬けに。", notesEn: "A daikon variety suitable for spring sowing. Unlike standard daikon which bolts easily in spring, this variety is tolerant of both cold and heat. Compact size makes it ideal for home gardens. Great for grated daikon, simmered dishes, and quick pickles.", recipe: "春大根の浅漬け：薄切りにして塩もみし、昆布・ゆずの皮を加えるだけ。みずみずしくさっぱりした味わい。", storage: "葉を切り落として濡れた新聞紙に包み冷蔵庫へ。秋大根より保存期間が短めなので早めに使い切る。" },
+  { name: "白菜", yomi: "はくさい", en: "Napa Cabbage", emoji: "🥬", sow: [8,9], seedling: [9,10], harvest: [11,12,1], notes: "秋まきで冬に収穫する寒さに強い野菜。結球するまでは害虫対策が特に重要。霜に当たると甘みが増す。鍋料理・漬物・炒め物の主役として冬の食卓に欠かせない。ビタミンCも豊富。", notesEn: "A cold-hardy vegetable sown in autumn and harvested in winter. Pest protection is especially important before heading. Frost greatly improves sweetness. A star ingredient in hot pot, pickles, and stir-fries; rich in vitamin C.", recipe: "白菜の漬物（浅漬け）：ざく切りにして塩・昆布・鷹の爪でもみ込み重石をするだけ。半日で食べられる。", storage: "丸ごとは新聞紙に包んで冷暗所で1ヶ月以上保存可能。カットしたものはラップして冷蔵庫へ。大量のときは塩漬けに。" },
+  // 9月〜
+  { name: "菊菜", yomi: "きくな しゅんぎく", en: "Chrysanthemum Greens", emoji: "🌼", sow: [9,10], seedling: [], harvest: [11,12,1,2], notes: "菊の仲間で独特の香りがある冬の葉物野菜。鍋料理の定番具材として親しまれる。ビタミンAやCが豊富で栄養価が高い。摘み取りながら収穫すると長期間楽しめる。春になると花を咲かせる。", notesEn: "A chrysanthemum relative with a distinctive aroma, popular as a winter leafy vegetable. A classic ingredient in hot pot. Rich in vitamins A and C. Harvest by pinching to enjoy a long season. Produces flowers in spring.", recipe: "菊菜のごま和え：塩茹でして水気を絞り、すりごま・醤油・砂糖で和えるだけ。独特の香りとごまが合う。", storage: "濡れた新聞紙に包んでポリ袋に入れ冷蔵庫の野菜室へ。3〜4日以内に使い切る。" },
+  { name: "高菜", yomi: "たかな", en: "Takana Mustard", emoji: "🥬", sow: [9,10], seedling: [], harvest: [12,1,2,3], notes: "辛みのある独特の風味を持つ葉野菜。寒さに非常に強く冬でも元気に育つ。高菜漬けにすると発酵して旨みが増し保存食になる。ラーメンや炒め物のトッピングとしてもおなじみ。九州では特に親しまれる。", notesEn: "A leafy vegetable with a distinctive pungent flavor. Extremely cold-hardy and grows vigorously in winter. Pickling and fermenting transforms it into a savory preserved food. A familiar topping for ramen and stir-fries, especially beloved in Kyushu.", recipe: "高菜炒飯：刻んだ高菜漬けをごま油で炒め、ご飯・卵を加えて炒めるだけ。旨みたっぷりの一品。", storage: "生葉は冷蔵庫で1週間ほど。塩漬けにして乳酸発酵させると冷蔵庫で数ヶ月〜1年保存できる。" },
+  { name: "からし菜", yomi: "からしな", en: "Mustard Greens", emoji: "🌿", sow: [9,10], seedling: [], harvest: [11,12,1,2,3], notes: "ピリッとした辛みが特徴のアブラナ科の野菜。寒さに強く秋まきで越冬して春まで収穫できる。生で食べると辛みが強いが、加熱すると和らぐ。漬物にするとほどよい辛みが残り独特の風味になる。", notesEn: "A brassica vegetable with a characteristic peppery bite. Cold-hardy and can be sown in autumn to overwinter and harvest through spring. Pungency is strong raw but mellows with cooking. Makes flavorful pickles with a pleasant lingering heat.", recipe: "からし菜の辛子醤油和え：塩茹でして水気を絞り、醤油・みりん・和辛子で和えるだけ。辛みが食欲をそそる。", storage: "濡れた新聞紙に包んでポリ袋に入れ冷蔵庫へ。4〜5日で使い切る。塩漬けにすると長期保存できる。" },
+  { name: "菜の花", yomi: "なのはな", en: "Rapeseed / Canola", emoji: "🌼", sow: [9,10], seedling: [], harvest: [2,3,4], notes: "春の訪れを告げる黄色い花と若い蕾・茎を食べる野菜。花が開く前の蕾が一番おいしい。ほろ苦さと甘みのバランスが春らしい味わい。お浸し・炒め物・パスタにも合う。種は菜種油の原料になる。", notesEn: "The yellow flowers and tender shoots herald spring. The buds before blooming are the most delicious. A pleasant balance of slight bitterness and sweetness characteristic of spring. Great boiled, stir-fries, or in pasta. Seeds are pressed for canola oil.", recipe: "菜の花の辛子和え：塩茹でして水気を絞り、和辛子・醤油・みりんで和えるだけ。春の定番おひたし。", storage: "濡れた新聞紙に包んでポリ袋に入れ冷蔵庫へ。2〜3日で使い切る。茹でてから冷凍保存も可。" },
+  { name: "のらぼう菜", yomi: "のらぼうな", en: "Norabou-na (Tokyo Rapeseed)", emoji: "🥬", sow: [9,10], seedling: [10,11], harvest: [3,4,5], notes: "東京・埼玉の多摩地域に伝わる江戸時代からの伝統野菜。アブラナ科の一種で菜の花に似ているが甘みが強くとても食べやすい。ほろ苦さが少なく子どもにも人気。江戸時代の飢饉でも人々を救ったとされる丈夫な野菜。寒さに非常に強く栽培が簡単。春に次々と脇芽が出て長期間収穫できる。", notesEn: "A traditional vegetable from the Tama region of Tokyo and Saitama, cultivated since the Edo period. Related to rapeseed but notably sweeter and milder, making it popular with children too. Said to have saved lives during Edo-era famines due to its hardiness. Very cold-tolerant and easy to grow. Produces abundant side shoots in spring for a long harvest season.", recipe: "のらぼう菜のお浸し：塩茹でして水気を絞り、醤油・鰹節をかけるだけ。甘みが際立つシンプルな一品。炒め物・パスタ・和え物にも幅広く使える。", storage: "濡れた新聞紙に包んでポリ袋に入れ冷蔵庫へ。3〜4日で使い切る。茹でてから冷凍保存すると1ヶ月保存可能。" },
+  { name: "玉ねぎ", yomi: "たまねぎ", en: "Onion", emoji: "🧅", sow: [9,10], seedling: [10,11], harvest: [5,6], notes: "秋に苗を植え翌年初夏に収穫する長期栽培の野菜。葉が倒れたら収穫のサイン。収穫後は乾燥させると長期保存できる。炒め物・スープ・カレーなど料理の基本野菜。甘みが強く生でも食べられる。", notesEn: "Planted as seedlings in autumn and harvested the following early summer after a long growing period. Tops falling over signals harvest time. Dry thoroughly after harvest for long storage. A fundamental cooking vegetable for stir-fries, soups, and curry. Sweet enough to eat raw.", recipe: "玉ねぎの丸ごと蒸し：丸ごとレンジで5〜6分加熱し、バター・醤油をかけるだけ。甘みが凝縮されトロトロに。", storage: "収穫後2〜3週間風通しの良い場所で乾燥させてからネットに入れて吊るす。常温で3〜6ヶ月保存可能。" },
+  // 10月〜
+  { name: "えんどう", yomi: "えんどう", en: "Pea", emoji: "🫛", sow: [10,11], seedling: [], harvest: [4,5,6], notes: "秋に種まきして越冬させ、春に収穫する。霜に当たっても枯れにくく寒さに強い。サヤエンドウ・スナップエンドウ・グリーンピースなど品種が豊富。春の風物詩として豆ご飯や卵とじに使われる。", notesEn: "Sow in autumn, overwinter, and harvest in spring. Withstands frost well and is cold-hardy. Includes many types: snow peas, snap peas, and shelling peas. A spring tradition in pea rice and egg-and-pea dishes.", recipe: "えんどうの卵とじ：だし・醤油・みりんで煮て溶き卵でとじるだけ。春らしいやさしい味のおかず。", storage: "収穫後は鮮度が落ちやすい。すぐに使わない場合は塩茹でして冷凍保存すると便利。" },
+  { name: "スナップエンドウ", yomi: "すなっぷえんどう", en: "Snap Pea", emoji: "🫛", sow: [10,11], seedling: [], harvest: [4,5,6], notes: "莢と豆の両方を食べられる品種。甘みが非常に強く生でかじってもおいしい。支柱が必要で、つるが伸びてきたら誘引する。シャキシャキとした食感はサラダや塩茹でで特に際立つ。春の定番野菜。", notesEn: "A variety eaten pod and pea together. Exceptionally sweet and delicious eaten raw straight off the vine. Needs support; guide tendrils as they grow. Its crisp snap shines in salads and simply boiled with salt. A spring staple.", recipe: "スナップエンドウの塩茹で：塩水でさっと茹でるだけ。そのままかマヨネーズをつけて食べるのが一番おいしい。", storage: "ポリ袋に入れて冷蔵庫の野菜室で2〜3日。塩茹でしてから冷凍すると1ヶ月保存できる。" },
+  { name: "グリーンピース", yomi: "ぐりーんぴーす", en: "Green Pea", emoji: "🫛", sow: [10,11], seedling: [], harvest: [4,5,6], notes: "実えんどうの一種で豆だけを食べる品種。莢が膨らんで豆がはっきりしてきたら収穫する。豆ご飯・スープ・炒め物に使う春の風物詩。冷凍保存もできるので収穫したらすぐに処理する。", notesEn: "A shelling pea variety eaten for the beans only. Harvest when pods plump up and beans are clearly visible. A spring classic for pea rice, soups, and stir-fries. Process and freeze promptly after harvesting.", recipe: "豆ご飯：塩を少し加えた炊き込みご飯に、茹でたグリーンピースを混ぜるだけ。春の香りがふわっと広がる。", storage: "収穫したらすぐに茹でて冷凍保存。冷凍した豆は解凍せずそのまま料理に使えて便利。" },
+  { name: "そら豆", yomi: "そらまめ", en: "Broad Bean", emoji: "🫘", sow: [10,11], seedling: [], harvest: [4,5,6], notes: "秋まきで越冬させ、春に大きな実を収穫する。莢が空を向いているうちが食べごろで、地面を向くようになったら収穫のサイン。塩茹でにすると甘みとホクホク感が楽しめる。鮮度が命の野菜。", notesEn: "Sow in autumn and overwinter for a spring harvest of large pods. Pods pointing skyward are the best eating stage; they signal harvest when they turn downward. Simply boiled in salt highlights their sweetness and floury texture. Best eaten fresh.", recipe: "そら豆の塩茹で：莢ごと塩水でゆでるだけ。莢から出してそのまま食べると甘みとホクホク感が最高。", storage: "収穫後は鮮度が急速に落ちる。当日中に塩茹でにするか、莢から出して冷凍保存すると1ヶ月持つ。" },
+  { name: "ニンニク", yomi: "にんにく", en: "Garlic", emoji: "🧄", sow: [10,11], seedling: [], harvest: [5,6], notes: "秋に鱗片をひとつずつ植え、翌年初夏に収穫する。葉が黄色くなったら収穫のサイン。収穫後は風通しの良い場所で乾燥させると長期保存できる。アリシンを含み強い抗菌作用と疲労回復効果がある。", notesEn: "Plant individual cloves in autumn and harvest the following early summer. Yellowing leaves signal harvest time. Dry in a well-ventilated spot for long storage. Contains allicin with potent antibacterial properties and fatigue-recovery benefits.", recipe: "醤油漬けニンニク：皮をむいたニンニクを醤油に漬けるだけ。3ヶ月後から食べられる。ご飯のお供や薬味に。", storage: "収穫後2週間ほど乾燥させてからネットに入れて風通しの良い場所に吊るす。常温で半年以上保存可能。" },
+  { name: "とうもろこし", yomi: "とうもろこし", en: "Corn / Maize", emoji: "🌽", sow: [4,5,6], seedling: [5,6], harvest: [7,8,9], notes: "夏野菜の王様。受粉をよくするために2列以上まとめて植えるのがコツ。収穫後は糖分がでんぷんに変わるので採ったらすぐ食べるか茹でるのが鉄則。スイートコーン・ポップコーン用など品種が豊富。", notesEn: "The king of summer vegetables. Plant in blocks of two or more rows for good pollination. Sugar converts to starch rapidly after harvest, so eat or cook immediately. Many varieties including sweet corn and popcorn types.", recipe: "とうもろこしの醤油バター焼き：グリルまたはフライパンで焼いてバターと醤油を絡めるだけ。シンプルで最高の夏の味。茹でる場合は皮付きのまま水から茹でると甘みが逃げない。", storage: "収穫後すぐ食べるのがベスト。すぐ食べない場合は皮付きのまま冷蔵庫で2〜3日。茹でてから冷凍すると1ヶ月保存できる。" },
+  { name: "とうがん（冬瓜）", yomi: "とうがん", en: "Winter Melon (Togan)", emoji: "🍈", sow: [4,5], seedling: [5,6], harvest: [8,9,10], notes: "夏に収穫するのに「冬瓜」という名前は、冬まで保存できることに由来する。大型のウリ科野菜でつる性。果肉は淡白でクセがなく、煮物・汁物・あんかけに最適。カロリーが低く95%が水分。沖縄では「シブイ」と呼ばれ伝統食材。", notesEn: "Despite being harvested in summer, its name means winter melon because it keeps until winter. A large climbing cucurbit. The mild, neutral flesh is excellent in simmered dishes, soups, and starchy sauces. Very low calorie at 95% water content. Known as shibui in Okinawa where it is a traditional ingredient.", recipe: "冬瓜のそぼろあん：だし・醤油・みりんで煮た冬瓜に鶏そぼろあんをかけるだけ。とろとろの食感が絶品。", storage: "丸ごとは冷暗所で数ヶ月保存できる優秀な保存野菜。カットしたものはラップして冷蔵庫で1週間。" },
+  { name: "こんにゃくいも", yomi: "こんにゃくいも", en: "Konjac (Devil's Tongue)", emoji: "🟤", sow: [4,5], seedling: [], harvest: [10,11], notes: "こんにゃくの原料となる球茎植物。種芋を植えてから収穫サイズになるまで3年かかる。収穫した芋を乾燥・粉末化して水と混ぜ凝固させるとこんにゃくになる。グルコマンナンを豊富に含み食物繊維の王様。カロリーがほぼゼロ。", notesEn: "The corm used to make konjac. Takes about three years from planting to harvest size. Dried and powdered corms are mixed with water and set to make konjac jelly. Extremely rich in glucomannan dietary fibre. Almost zero calories.", recipe: "手作りこんにゃく：芋をすりおろして水と混ぜ、石灰水（水酸化カルシウム）を加えて練り、熱湯に入れて固めるだけ。市販品とは別格の食感。", storage: "掘り上げた芋は乾燥させて冷暗所で保存。こんにゃくにした後は水に浸けて冷蔵庫で1週間ほど保存できる。" },
+  { name: "まこもだけ", yomi: "まこもだけ", en: "Water Bamboo (Makomo)", emoji: "🌾", sow: [3,4,5], seedling: [4,5], harvest: [9,10], notes: "イネ科の水生植物マコモの茎が黒穂菌に寄生されて肥大化したもの。見た目はタケノコに似てほくほくとした食感。水田や水を張った容器で育てる。古くから神事にも使われてきた植物。食物繊維・ビタミンB群が豊富。", notesEn: "The swollen stem of the water bamboo grass, caused by a smut fungus. Resembles bamboo shoots with a floury texture. Grown in paddy fields or water-filled containers. Long used in Shinto ceremonies. Rich in dietary fibre and B vitamins.", recipe: "まこもだけの炒め物：薄切りにしてごま油で炒め、塩・こしょうするだけ。天ぷらにすると甘みが際立つ。", storage: "皮付きのまま濡れた新聞紙に包んで冷蔵庫へ。1週間ほどで使い切る。" },
+  { name: "さとうきび", yomi: "さとうきび", en: "Sugar Cane", emoji: "🎋", sow: [3,4], seedling: [], harvest: [11,12,1,2], notes: "砂糖の原料となる南国植物。沖縄・鹿児島が主産地。茎を直接かじると甘い汁が楽しめる。茎を絞った汁を煮詰めると黒糖になる。温暖な気候を好み、寒さに弱いため本州では温室か夏の期間限定栽培になる。高さ2〜3mになる大型植物。", notesEn: "The tropical plant used to make sugar. Mainly grown in Okinawa and Kagoshima. Biting into the raw stalk releases sweet juice. Boiling down the pressed juice yields kokuto (brown sugar). Requires warmth and is frost-sensitive, so on Honshu it is grown in greenhouses or only during summer. Grows 2–3 m tall.", recipe: "黒糖の作り方：収穫した茎を絞って汁を取り、鍋で焦げないよう弱火でじっくり煮詰めるだけ。固まる前にすくうと黒糖シロップ、固めると固形黒糖になる。", storage: "収穫した茎は冷暗所で数週間保存できる。黒糖は密閉容器で常温長期保存可能。" },
+  { name: "はやとうり（隼人瓜）", yomi: "はやとうり", en: "Chayote (Hayato-uri)", emoji: "🥒", sow: [4,5], seedling: [5,6], harvest: [10,11], notes: "一株から100個以上収穫できる驚異的な収穫量の瓜。実をそのまま土に埋めて種にする。つる性で棚が必要。シャキシャキとした食感でくせがない。漬物・炒め物・煮物に使える。薩摩隼人（鹿児島）から広まったことが名前の由来。カリウム・葉酸が豊富。", notesEn: "A remarkable vine that yields over 100 fruits per plant. Plant the whole fruit directly in the ground as the seed. Needs a trellis. Crisp, neutral-tasting flesh suitable for pickles, stir-fries, and simmered dishes. Named after the Satsuma Hayato people of Kagoshima. Rich in potassium and folate.", recipe: "はやとうりの浅漬け：薄切りにして塩もみし昆布・鷹の爪で漬けるだけ。シャキシャキした食感が楽しめる。炒め物はベーコンと炒めると美味。", storage: "常温の冷暗所で数週間〜1ヶ月保存できる。カットしたものはラップして冷蔵庫で1週間。" },
+  { name: "うり（白瓜・漬瓜）", yomi: "うり しろうり つけうり", en: "White Melon / Pickling Melon (Shiro-uri)", emoji: "🥒", sow: [4,5], seedling: [5,6], harvest: [7,8,9], notes: "奈良漬け・粕漬けの原料として有名な瓜。甘みが少なく漬物に最適な品種。大阪・京都では「なにわの伝統野菜」としても親しまれる。栽培が簡単でたくさん収穫できる。シャキシャキとした食感で漬物にすると独特の旨みが出る。", notesEn: "Famous as the base ingredient for Nara-zuke and sake-lees pickles. Low in sweetness and ideal for pickling. Cherished as a traditional vegetable in Osaka and Kyoto. Easy to grow and productive. Crisp texture that develops a distinctive umami when pickled.", recipe: "奈良漬け風：うりを塩漬けにしてから酒粕に漬けるだけ。本格的な奈良漬けは何度か漬け替えるほど深みが出る。浅漬けは塩もみして昆布と合わせるだけ。", storage: "生のものは冷蔵庫で1週間ほど。塩漬けにすると数週間、奈良漬けにすると数ヶ月〜1年以上保存できる。" },
+
+  { name: "チョロギ", yomi: "ちょろぎ", en: "Chorogi (Chinese Artichoke)", emoji: "🌀", sow: [3,4], seedling: [], harvest: [11,12], notes: "シソ科の多年草でカタツムリ形の白い根茎を食べる。脳細胞を活性化するアクティオサイドを含み、脳梗塞や認知症の予防・改善効果が動物実験で示唆されている注目の健康野菜。オリゴ糖・ポリフェノール・ビタミン・鉄分も豊富で腸内環境の改善や抗酸化作用も期待できる。長寿の縁起物としておせち料理の梅酢漬けにも使われる。", notesEn: "A perennial in the mint family with spiral-shaped white tubers. Contains acteoside, which has been suggested in animal studies to help prevent or improve stroke and dementia. Rich in oligosaccharides, polyphenols, vitamins, and iron. Traditionally used in New Year\'s dishes as a symbol of longevity.", recipe: "梅酢漬け：塩茹でしたチョロギを梅酢に漬けるだけ。鮮やかな赤色に染まりおせち料理の定番に。天ぷらや塩炒めでホクッとした食感も楽しめる。", storage: "収穫後は土付きのまま新聞紙に包んで冷蔵庫か冷暗所へ。梅酢漬けにすると冷蔵庫で数ヶ月保存できる。" },
+  { name: "麦", yomi: "むぎ", en: "Wheat / Barley", emoji: "🌾", sow: [10,11], seedling: [], harvest: [5,6], notes: "秋まきで越冬させ、初夏に収穫する穀物。大麦・小麦・ライ麦など種類がある。麦踏みをすることで根張りが良くなり収穫量が増える。収穫後は乾燥・脱穀が必要。麦茶・麦飯・パンの原料になる。", notesEn: "A grain sown in autumn, overwintered, and harvested in early summer. Varieties include barley, wheat, and rye. Treading the young plants strengthens roots and improves yield. Requires drying and threshing after harvest. Used for mugicha, barley rice, and bread.", recipe: "手作り麦茶：収穫した大麦を乾煎りして焙煎するだけ。市販品とは比べ物にならない香ばしさがある。", storage: "脱穀・乾燥させてから密閉容器に入れて冷暗所で保存。精麦・製粉したものは冷蔵または冷凍保存。" },
+  // きのこ類
+  { name: "しいたけ", yomi: "しいたけ", en: "Shiitake Mushroom", emoji: "🍄", sow: [3,4,9,10], seedling: [], harvest: [4,5,10,11], notes: "原木や菌床で栽培できるきのこ。原木栽培は1〜2年かかるが風味が抜群。菌床栽培は短期間で収穫できる。干ししいたけにすると旨みが凝縮してダシとして使える。ビタミンD・食物繊維が豊富。炒め物・鍋・天ぷら・佃煮など幅広く使える。", notesEn: "A mushroom grown on logs or substrate blocks. Log cultivation takes 1–2 years but gives outstanding flavour. Substrate cultivation yields a quicker harvest. Dried shiitake has concentrated umami and makes an excellent stock. Rich in vitamin D and dietary fibre. Versatile for stir-fries, hot pot, tempura, and tsukudani.", recipe: "しいたけの丸焼き：軸を取ってグリルで焼き、醤油・バターをひとたらし。シンプルで旨みが際立つ。", storage: "冷蔵庫で3〜4日。干ししいたけは密閉容器で常温6ヶ月以上保存できる。冷凍すると旨みが増す。" },
+  { name: "えのき", yomi: "えのき", en: "Enoki Mushroom", emoji: "🍄", sow: [10,11], seedling: [], harvest: [12,1,2,3], notes: "白くて細長い人気のきのこ。市販品は菌床栽培だが、自然界では冬に枯れ木に群生する。低カロリーで食物繊維・ビタミンが豊富。鍋料理・炒め物・スープに欠かせない存在。えのきベーコン巻きは定番の一品。", notesEn: "A popular mushroom with long, slender white stems. Commercially grown on substrate blocks, but in nature it clusters on dead trees in winter. Low-calorie and rich in dietary fibre and vitamins. A staple in hot pot, stir-fries, and soups. Bacon-wrapped enoki is a classic preparation.", recipe: "えのきベーコン巻き：えのきをベーコンで巻いてフライパンで焼き、醤油・みりんで味付け。簡単な絶品おかず。", storage: "ポリ袋に入れて冷蔵庫で4〜5日。冷凍保存すると1ヶ月持ち、旨みも増す。" },
+  { name: "しめじ", yomi: "しめじ", en: "Shimeji Mushroom", emoji: "🍄", sow: [9,10], seedling: [], harvest: [10,11,12], notes: "「香りまつたけ、味しめじ」と言われるほど旨みの強いきのこ。ぶなしめじが一般的で菌床栽培が主流。石づきを切り落としてほぐして使う。炒め物・鍋・パスタ・炊き込みご飯に合う。食物繊維・ビタミンB群が豊富。", notesEn: "Said to have the finest flavour of all mushrooms in the Japanese saying \'matsutake for aroma, shimeji for taste.\' Beech shimeji grown on substrate blocks is the most common variety. Trim the base and separate before use. Great in stir-fries, hot pot, pasta, and rice dishes. Rich in dietary fibre and B vitamins.", recipe: "しめじの炊き込みご飯：しめじ・醤油・みりん・だしで炊くだけ。秋の香りが広がる定番ご飯。", storage: "ポリ袋に入れて冷蔵庫で4〜5日。冷凍保存は1ヶ月。凍ったまま料理に使えて便利。" },
+  // 苗植えのみ
+  { name: "いちご", yomi: "いちご", en: "Strawberry", emoji: "🍓", sow: [], seedling: [9,10], harvest: [4,5,6], notes: "秋に苗を植えて翌年春に収穫する。ランナー（匍匐枝）を使って苗を増やすことができる。マルチングをすると保温・保湿・泥はねを防げる。甘みと酸味のバランスが絶妙で、収穫したてが最もおいしい。", notesEn: "Plant seedlings in autumn and harvest the following spring. Propagate new plants easily using runners. Mulching retains warmth and moisture while preventing mud splash. The balance of sweetness and acidity is best enjoyed freshly picked.", recipe: "いちごジャム：砂糖といちごを鍋で煮詰めるだけ。レモン汁を加えると色よく仕上がる。パンに塗って最高。", storage: "収穫後は常温に置かない。ヘタをつけたまま重ならないようにして冷蔵庫へ。2〜3日で食べ切る。大量のときはジャムに。" },
+];
+
+const monthsJa = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
+const monthsEn = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const seasons = [
+  { ja: "春", en: "Spring", months: [3,4,5], color: "#db2777", bg: "#fdf2f8" },
+  { ja: "夏", en: "Summer", months: [6,7,8], color: "#d97706", bg: "#fffbeb" },
+  { ja: "秋", en: "Autumn", months: [9,10,11], color: "#ea580c", bg: "#fff7ed" },
+  { ja: "冬", en: "Winter", months: [12,1,2], color: "#2563eb", bg: "#eff6ff" },
+];
+
+const currentMonth = new Date().getMonth() + 1;
+let selectedMonth = currentMonth;
+let currentTab = 'calendar';
+let openCard = {};
+let searchQuery = '';
+
+function getSeason(m) { return seasons.find(s => s.months.includes(m)); }
+
+function setLang(lang) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-btn').forEach((b,i) => {
+    b.classList.toggle('active', ['ja','en','both'][i] === lang);
+  });
+  updateTranslations();
+  if (searchQuery) {
+    renderSearch();
+  } else if (currentTab === 'calendar') {
+    renderCalendar();
+  } else if (currentTab === 'list') {
+    renderList();
+  } else if (currentTab === 'herb') {
+    renderHerbs();
+  } else if (currentTab === 'weed') {
+    renderWeeds();
+  } else if (currentTab === 'perennial') {
+    renderPerennials();
+  } else if (currentTab === 'fruit') {
+    renderFruitTrees();
+  }
+}
+
+function updateTranslations() {
+  document.querySelectorAll('.t').forEach(el => {
+    if (currentLang === 'en') el.textContent = el.dataset.en;
+    else el.textContent = el.dataset.ja;
+  });
+}
+
+// ===== 薬草データ =====
+const herbs = [
+  // 春の七草
+  { name: "せり", months: [1,2,3,4,5,6,7], en: "Japanese Parsley (Seri)", yomi: "せり", emoji: "🌿", season: "春〜夏", use: "全草", notes: "🌿 春の七草のひとつ。「競り合う」ように群生することが名前の由来。水辺や湿った場所に自生する。独特の香りがあり七草粥・鍋料理・お浸しに使われる。鉄分・ビタミンCが豊富で解熱・利尿・血圧降下作用があるとされる。毒草のドクゼリと混同しないよう注意が必要。", notesEn: "One of the Seven Spring Herbs of Japan. Named for growing in dense competing clusters near water. Rich in iron and vitamin C with diuretic and fever-reducing properties. Used in seven-herb porridge, hot pot, and boiled greens. Caution: can be confused with the toxic water hemlock." , recipe: "七草粥・お浸し・鍋の具・和え物：さっと塩茹でして食べる。独特の香りを活かしてシンプルに。天ぷらにしても美味。", storage: "水に浸して冷蔵庫へ。2〜3日以内に使う。" },
+  { name: "なずな", months: [1,2,3,4], en: "Shepherd's Purse (Nazuna)", yomi: "なずな ぺんぺんぐさ", emoji: "🌿", season: "春", use: "全草", notes: "🌿 春の七草のひとつ（ペンペングサとも呼ばれる）。三角形のさやがペンペンという音に聞こえることが名前の由来。止血・利尿・血圧降下作用があるとされる薬草。若葉は七草粥・お浸し・味噌汁に使える。畑や田んぼ脇のどこにでも生える身近な野草。", notesEn: "One of the Seven Spring Herbs, also called Shepherd\'s Purse. Triangular seed pods rattle like a shamisen plectrum, giving it the name Pen-pen-gusa. Has blood-pressure-lowering and diuretic properties. Used in seven-herb porridge, miso soup, and boiled dishes." , recipe: "七草粥・お浸し・味噌汁：若葉を塩茹でして水気を絞って使う。ほのかな辛みと香りがある。", storage: "濡れた新聞紙に包んで冷蔵庫へ。2〜3日以内に使う。" },
+  { name: "ハハコグサ（ごぎょう）", months: [1,2,3,4,5], en: "Cudweed (Gogyo)", yomi: "ははこぐさ ごぎょう", emoji: "🌼", season: "春", use: "全草", notes: "🌿 春の七草「ごぎょう」のこと。白い綿毛に覆われた葉が特徴で「母子草」とも書く。七草粥に入れて無病息災を祈る伝統がある。古くから咳・のどの炎症・胃腸の不調に用いられてきた。若葉を茹でてお浸しや草餅にも使える。", notesEn: "One of the Seven Spring Herbs, known as gogyo. White-woolly leaves give it the name Mother and Child Grass. Traditionally used for coughs, sore throats, and digestive complaints. Young leaves can be boiled or used in herb rice cakes." , recipe: "七草粥・草餅：若葉を茹でてよもぎの代わりに草餅に使える。お浸しにもなる。", storage: "鮮度が落ちやすいので収穫後すぐ使う。茹でて冷凍保存可。" },
+  { name: "ハコベ（はこべら）", months: [1,2,3,4,5], en: "Chickweed (Hakobera)", yomi: "はこべ はこべら", emoji: "🌿", season: "春", use: "全草", notes: "🌿 春の七草「はこべら」のこと。消炎・止血・利尿作用があるとされ、歯茎の炎症や虫歯予防に役立てられてきた。七草粥の七草のひとつとして1月7日に食べると無病息災が叶うとされる。若葉はお浸しやサラダに食べられる。ニワトリや小鳥が好む野草としても有名。", notesEn: "One of the Seven Spring Herbs, known as hakobera. Has anti-inflammatory, hemostatic, and diuretic properties. Traditionally used for gum inflammation and dental care. Young leaves are eaten boiled or in salads. Beloved by chickens and wild birds." , recipe: "七草粥・お浸し・サラダ：若葉をさっと塩茹でするかそのままサラダに。", storage: "冷蔵庫で2〜3日。早めに使うか茹でて冷凍。" },
+  { name: "コオニタビラコ（ほとけのざ）", months: [1,2,3,4], en: "Nipplewort (Hotokenoza)", yomi: "こおにたびらこ ほとけのざ", emoji: "🌼", season: "春", use: "全草", notes: "🌿 春の七草「ほとけのざ」はこの草のこと（シソ科のホトケノザとは別種なので注意）。七草粥の七草のひとつとして1月7日に食べると無病息災が叶うとされる。キク科の小型野草で田んぼの畦道や湿った草地に生える。健胃・解熱・利尿作用があるとされる。若葉はお浸しやサラダとして食べられる。", notesEn: "One of the Seven Spring Herbs. This is the true hotokenoza, not the inedible Henbit Deadnettle. A small daisy-family plant of paddy edges and damp grassland. Has digestive, fever-reducing, and diuretic properties. Young leaves can be boiled or eaten in salads." , recipe: "七草粥・お浸し：若葉を塩茹でして水気を絞り、醤油・鰹節で和える。", storage: "鮮度が落ちやすいので収穫後すぐ使う。" },
+  { name: "すずな（かぶ）", months: [1,2,3,4,5,9,10,11,12], en: "Turnip (Suzuna)", yomi: "すずな かぶ", emoji: "⚪", season: "春・秋", use: "根・葉", notes: "🌿 春の七草のひとつ。「すずな」はかぶの古名。七草粥に根や葉を刻んで入れる。消化を助けるアミラーゼが豊富で胃腸を整える効果がある。葉にはビタミンCとカルシウムが豊富。かぶとして野菜一覧にも登録されており、3〜4月・9〜10月に栽培できる。", notesEn: "One of the Seven Spring Herbs. Suzuna is the ancient Japanese name for turnip. Added to seven-herb porridge for good health. Rich in amylase to aid digestion; leaves are high in vitamin C and calcium. Also cultivated as a vegetable in spring and autumn." , recipe: "七草粥・浅漬け・煮物：根を薄切りにして粥に入れる。葉も塩もみして浅漬けに。", storage: "葉と根を切り分けて冷蔵庫へ。根は新聞紙に包んで1週間保存できる。" },
+  { name: "すずしろ（大根）", months: [1,2,8,9,10,11,12], en: "Daikon Radish (Suzushiro)", yomi: "すずしろ だいこん", emoji: "🫚", season: "秋・冬", use: "根・葉", notes: "🌿 春の七草のひとつ。「すずしろ」は大根の古名。七草粥に大根を薄切りや千切りにして入れる。根に含まれるジアスターゼが消化を助け、胃もたれ・食べすぎに効果的。葉にはビタミンCが豊富。大根として野菜一覧にも登録されており、8〜9月に栽培できる。", notesEn: "One of the Seven Spring Herbs. Suzushiro is the ancient name for daikon radish. Sliced thin and added to seven-herb porridge. The enzyme diastase aids digestion and relieves overeating. Leaves are rich in vitamin C. Also grown as a vegetable from August to September." , recipe: "七草粥・大根おろし・煮物：薄切りにして粥に加える。消化を助けるので食べすぎた翌日に最適。", storage: "葉を切り落として新聞紙に包み冷蔵庫か冷暗所で保存。" },
+  // その他の薬草
+  { name: "ビワ", months: [1,2,3,4,5,6,7,8,9,10,11,12], en: "Loquat", yomi: "びわ", emoji: "🍃", season: "通年（葉）／初夏（実）", use: "葉・種・実", notes: "葉を乾燥させてびわ茶に。アミグダリンを含み古来から民間薬として重用されてきた。葉の煎じ汁は皮膚のかゆみや湿疹に外用されてきた。実は初夏に甘く熟し、そのまま食べられる。", notesEn: "Dried loquat leaves are used to make loquat-leaf tea, long valued as a folk remedy. The leaf decoction has been applied externally for itching and skin inflammation. Ripe fruit in early summer is sweet and eaten fresh." , recipe: "びわ茶：葉を乾燥させて煎じる。外用は葉の煎じ汁を患部に塗布。実はそのまま食べるかジャムに。", storage: "乾燥葉は密閉容器で常温1年以上。実は冷蔵庫で2〜3日。" },
+  { name: "タンポポ", months: [3,4,5,6,7,8,9,10], en: "Dandelion", yomi: "たんぽぽ", emoji: "🌻", season: "春〜秋", use: "全草・根", notes: "葉・花・根すべて食用・薬用になる万能野草。根を乾燥・焙煎するとタンポポコーヒーになり、肝臓の強化・利尿・消化促進に効果があるとされる。若葉はサラダに、花は天ぷらに。", notesEn: "A versatile wild herb: leaves, flowers, and roots are all edible and medicinal. Roasted roots make a caffeine-free dandelion coffee good for liver health, digestion, and diuresis. Young leaves go in salads; flowers are delicious in tempura." , recipe: "若葉サラダ・お浸し・天ぷら、根をタンポポコーヒーに：根を乾燥・焙煎してお湯で抽出するだけ。", storage: "葉は冷蔵庫で2〜3日。根は乾燥させて密閉保存で長期保存可。" },
+  { name: "クワ", months: [4,5,6,7,8,9,10], en: "Mulberry", yomi: "くわ", emoji: "🍃", season: "春〜秋（葉）／初夏（実）", use: "葉・実・根皮", notes: "葉を乾燥させた桑の葉茶は血糖値の上昇を抑えるDNJを含み糖尿病予防に注目されている。実（桑の実）はそのまま食べるほかジャムにも。根皮は漢方薬「桑白皮」として咳止めに使われる。", notesEn: "Dried mulberry leaves make a tea containing DNJ, which suppresses blood sugar spikes, gaining attention for diabetes prevention. Berries are eaten fresh or made into jam. The root bark is used in traditional Chinese medicine as a cough remedy." , recipe: "桑の葉茶：乾燥させた葉を煎じる。実はそのまま食べるかジャム・果実酒に加工。", storage: "乾燥葉は密閉容器で常温1年。実は収穫後すぐ食べるか冷凍保存。" },
+  { name: "ヤブカンゾウ", months: [3,4,5,6,7,8], en: "Orange Daylily", yomi: "やぶかんぞう", emoji: "🌸", season: "春〜夏", use: "若芽・花・根", notes: "春の若芽は山菜として食べられ、ぬめりがあり美味。花も食用になる。根は利尿・消炎作用があるとされ、むくみや不眠に民間薬として使われてきた。オレンジ色の八重咲きの花が美しい。", notesEn: "Young spring shoots are eaten as a mountain vegetable with a pleasant mucilaginous texture. Flowers are also edible. The root has diuretic and anti-inflammatory properties used in folk medicine for edema and insomnia. The deep orange double flowers are beautiful." , recipe: "若芽のお浸し・炒め物：塩茹でして酢味噌和えや炒め物に。花は天ぷらや和え物に。", storage: "若芽は収穫後すぐ調理する。花は乾燥させて保存できる。" },
+  { name: "ハギ", months: [8,9,10], en: "Bush Clover (Hagi)", yomi: "はぎ", emoji: "🌸", season: "秋", use: "全草・根", notes: "秋の七草のひとつ。根に解熱・消炎作用があるとされ、風邪や咳の民間薬として使われてきた。若芽や花は食用になる。蜜源植物としてミツバチにも重要。根粒菌で土地の窒素固定にも役立つ。", notesEn: "One of the Seven Autumn Grasses of Japan. Roots have fever-reducing and anti-inflammatory properties. Young shoots and flowers are edible. An important nectar plant for bees, and root nodules fix nitrogen in the soil." , recipe: "若芽・花の天ぷら・お浸し：若芽は塩茹でしてお浸しに。花はそのまま浮かべて料理の彩りに。根は煎じてお茶に。", storage: "若芽は収穫後すぐ使う。根は乾燥させて密閉保存。" },
+  { name: "アザミ", months: [4,5,6,7,8,9,10], en: "Thistle", yomi: "あざみ", emoji: "🌸", season: "春〜秋", use: "若芽・根・花", notes: "若芽・茎・根を食べられる山菜。根を煮ると甘みがあり美味。肝臓保護・利胆作用のあるシリマリンを含む仲間が多く、健康茶としても利用される。地域によって多くの種類がある。", notesEn: "A mountain vegetable whose young shoots, stems, and roots are all edible. Roots are sweet when simmered. Many species contain silymarin known for liver-protective effects. Species vary widely by region." , recipe: "若芽・茎のお浸し・炒め物：塩茹でしてアク抜きしてから使う。根は煮ると甘みがあり美味。", storage: "収穫後すぐ調理。塩茹でして冷凍保存も可能。" },
+  { name: "ヒキオコシ", months: [7,8,9,10], en: "Rabdosia Herb (Hikioikoshi)", yomi: "ひきおこし", emoji: "🌿", season: "夏〜秋", use: "全草", notes: "「引き起こし」の名の通り、倒れた人を引き起こすほどの健胃効果があるとされる野草。胃腸の働きを整えるオラボニンを含み、苦い煎じ液が胃もたれ・食欲不振に使われてきた。別名エンメイソウ。", notesEn: "Literally means to revive the fallen, reflecting its powerful digestive effect in folk tradition. Contains orabonine, a bitter compound that stimulates digestion. A bitter decoction is used for indigestion and poor appetite. Also known as Enmeiso (life-prolonging herb)." , recipe: "健胃茶：全草を乾燥させて煎じる。苦みが強いので少量から始める。胃もたれのときに飲む。", storage: "乾燥させて密閉容器で常温6ヶ月以上保存できる。" },
+  { name: "タラノキ", months: [3,4,5], en: "Japanese Angelica Tree", yomi: "たらのき", emoji: "🌿", season: "春", use: "新芽", notes: "春の山菜の王様と呼ばれる木本植物。新芽の「タラの芽」は天ぷらが絶品。樹皮は漢方で糖尿病・神経痛・リウマチに用いられる。根皮に抗炎症・血糖値降下作用があるとされる。トゲに注意。", notesEn: "Called the King of Mountain Vegetables. Young buds (tara-no-me) are exceptional in tempura. Bark is used in traditional medicine for diabetes, neuralgia, and rheumatism. Handle with care as the trunk is covered in sharp spines." , recipe: "天ぷら：定番の食べ方。さっと衣をつけて揚げるだけで春の香りが楽しめる。お浸しや炒め物にも。", storage: "収穫後はすぐ調理するのがベスト。冷蔵で2〜3日。塩茹でして冷凍保存も可。" },
+  { name: "フキ", months: [2,3,4,5], en: "Butterbur (Fuki)", yomi: "ふき", emoji: "🌿", season: "春", use: "葉柄・花茎（ふきのとう）", notes: "春一番に出るふきのとうは天ぷらや味噌和えで春の味覚を楽しめる。ペタシテニンを含み抗炎症・解毒作用があるとされる。葉柄は煮物・きんぴらに。大量摂取は肝臓に負担をかける成分も含むので注意。", notesEn: "The earliest spring shoots (fuki-no-to) are a seasonal delicacy in tempura and miso paste. Contains petasinene with anti-inflammatory and detoxifying properties. Leaf stalks are used in simmered dishes and kinpira stir-fry. Large amounts may burden the liver." , recipe: "ふきのとう味噌・天ぷら：ふきのとうは刻んで味噌と炒めるか天ぷらに。葉柄は筋を取って煮物・きんぴらに。", storage: "収穫後すぐ調理。茹でて水にさらしてから冷蔵で3〜4日。塩漬けにして保存食に。" },
+  { name: "イタドリ", months: [3,4,5,6,7], en: "Japanese Knotweed", yomi: "いたどり", emoji: "🌿", season: "春〜夏", use: "若茎", notes: "若い茎は酸味があり山菜として食べられる。レスベラトロールを含み抗酸化・抗炎症作用が注目されている。根は漢方薬「虎杖根」として便秘・関節炎に使われる。塩漬けにして保存食にもなる。", notesEn: "Young stems have a pleasant sourness and are eaten as a mountain vegetable. Contains resveratrol attracting research for antioxidant and anti-inflammatory effects. Roots are used in herbal medicine for constipation and arthritis. Can be salt-preserved." , recipe: "お浸し・炒め物・塩漬け：若茎は皮をむいて塩茹でし酸味を活かして和え物に。塩漬けにすると保存食に。🔗 <a href='https://r-tsushin.com/sdgs/survival_recipe_01_itadori/' target='_blank' style='color:#b45309;'>イタドリのレシピ集はこちら</a>", storage: "塩漬けにすると冷蔵で数ヶ月保存できる。生は2〜3日以内に使う。" },
+  { name: "ツユクサ", months: [6,7,8,9,10], en: "Asiatic Dayflower", yomi: "つゆくさ", emoji: "💙", season: "夏〜秋", use: "全草・花", notes: "鮮やかな青い花が美しい一年草。消炎・利尿・解熱作用があるとされ、のどの痛みや発熱に煎じて飲まれてきた。花の青い色素は友禅染の下絵に使われた歴史もある。若葉はお浸しで食べられる。", notesEn: "A pretty annual with vivid blue flowers. Has anti-inflammatory, diuretic, and fever-reducing properties, traditionally drunk as a decoction for sore throats and fevers. The blue pigment was historically used as an underpainting dye in Yuzen dyeing. Young leaves can be boiled and eaten." , recipe: "お浸し：若葉を塩茹でして醤油・鰹節で和える。花は料理の飾りや染色に利用。薬用は煎じてお茶に。", storage: "鮮度が落ちやすいので収穫後すぐ使う。" },
+  { name: "ノブドウ", months: [7,8,9,10,11], en: "Wild Grape (Nobudo)", yomi: "のぶどう", emoji: "🍇", season: "秋（実）", use: "実・葉・根", notes: "秋に紫・青・白など虹色の美しい実をつける。実は食べられないが葉と根に肝機能改善・抗炎症作用があるとされ、肝炎の民間薬として古くから用いられてきた。葉を乾燥させてお茶にして利用する。", notesEn: "Bears beautiful multicolored berries in purple, blue, and white in autumn. The berries are not edible, but leaves and roots have liver-protective and anti-inflammatory properties used in folk medicine for hepatitis. Dried leaves are brewed as a tea." , recipe: "葉茶：葉を乾燥させて煎じて飲む。実は食べられないが観賞価値が高い。", storage: "乾燥葉は密閉容器で常温6ヶ月以上保存できる。" },
+  { name: "メナモミ", months: [7,8,9,10], en: "Siegesbeckia (Menamomi)", yomi: "めなもみ", emoji: "🌿", season: "夏〜秋", use: "全草", notes: "田畑の畦道や草地に生える野草。葉や茎に粘液があり虫や種を貼り付ける。消炎・解毒作用があるとされ、皮膚のかぶれや腫れ物に葉を揉んでつける民間療法がある。生薬名「豨薟（きけん）」。", notesEn: "A wild herb of paddy edges with sticky glandular hairs. Has anti-inflammatory and detoxifying properties, traditionally applied externally to rashes and swellings. Known in Chinese herbal medicine as qixian." , recipe: "外用（湿布）：生葉をもみ潰して皮膚の腫れやかぶれに直接あてる民間療法。薬用は乾燥させて煎じる。", storage: "生葉は外用として収穫後すぐ使う。乾燥させて密閉保存も可。" },
+  { name: "カキ（柿）", months: [9,10,11,12], en: "Japanese Persimmon", yomi: "かき", emoji: "🍊", season: "秋（実）／通年（葉）", use: "実・葉・へた", notes: "柿の葉はビタミンCが豊富で、乾燥させると柿の葉茶になり高血圧予防に役立つとされる。へた（柿蒂）は漢方でしゃっくり止めに使われる。タンニンを豊富に含み渋柿は渋み抜きをして食べる。", notesEn: "Persimmon leaves are rich in vitamin C and make a healthful tea said to help prevent high blood pressure. The calyx is used in traditional medicine as a hiccup remedy. Rich in tannins; astringent persimmons must be treated before eating." , recipe: "柿の葉茶：若葉を蒸してから乾燥させて煎じる。実はそのまま・干し柿・柿酢に加工。", storage: "乾燥葉は密閉容器で1年保存。干し柿は風通しの良い場所で数ヶ月保存可。" },
+  { name: "ラズベリー", months: [6,7,8,9], en: "Raspberry", yomi: "らずべりー", emoji: "🫐", season: "夏（6〜9月）", use: "果実・葉", notes: "バラ科の落葉低木。赤・黒・黄色などの品種がある。一度植えると毎年収穫できる多年生植物。栽培が比較的簡単で家庭菜園にも向く。ポリフェノール・ビタミンC・食物繊維が豊富。葉はラズベリーリーフティーとして妊婦さんにも親しまれる。二季なり品種は春と秋の2回収穫できる。", notesEn: "A deciduous Rosaceae shrub with red, black, or yellow varieties. A perennial that returns and fruits every year once established. Relatively easy to grow and well-suited to home gardens. Rich in polyphenols, vitamin C, and dietary fibre. Leaves are used as raspberry leaf tea, popular with expectant mothers. Everbearing varieties produce two crops in spring and autumn.", recipe: "生食・ジャム・スムージー・ソース：そのまま食べるのが一番おいしい。大量に採れたらジャムやスムージーに。ヨーグルトやアイスのトッピングにも最高。葉は乾燥させてハーブティーに。", storage: "デリケートで傷みやすいので収穫後すぐ食べるのがベスト。冷蔵庫で1〜2日。冷凍すると数ヶ月保存でき、スムージーやジャムにそのまま使える。" },
+  { name: "クサイチゴ", months: [3,4,5], en: "Japanese Bramble (Kusa-ichigo)", yomi: "くさいちご", emoji: "🍓", season: "春（3〜5月）", use: "果実・葉", notes: "春一番に実る野生のイチゴ。低い草むらに生えるバラ科の半落葉低木。白い花が咲いた後に赤い実がなる。甘みが強くジューシーで野生のイチゴの中でも特においしい部類。畦道・林の縁・草地などに自生する。葉に細かいトゲがあるので摘むときは注意。", notesEn: "The first wild berry of spring. A semi-deciduous Rosaceae shrub growing low in grassland. White flowers are followed by red berries. Among the sweetest and juiciest of wild berries. Found on paddy banks, woodland edges, and grassland. The leaves have fine prickles, so take care when picking.", recipe: "生食が最高：そのまま食べるのが一番おいしい。大量に採れたらジャムや果実酒に。ヨーグルトに混ぜてもおいしい。", storage: "デリケートで傷みやすいので採取後すぐに食べる。冷蔵庫で1日以内。冷凍保存するとジャムやスムージーに使える。" },
+  { name: "ヘビイチゴ", months: [4,5,6,7,8], en: "Mock Strawberry (Hebi-ichigo)", yomi: "へびいちご", emoji: "🍓", season: "春〜夏（4〜8月）", use: "果実・全草", notes: "田んぼの畦道や草地に普通に見られるバラ科の多年草。赤い実はイチゴによく似ているが甘みはほとんどなく味は薄い。毒はないので食べられる。「ヘビが食べる苺」「ヘビが潜む場所に生える」などが名前の由来諸説あり。全草を民間薬として虫刺されの外用に使う地域もある。", notesEn: "A common Rosaceae perennial found on paddy banks and grassland. The red berries resemble strawberries but have almost no sweetness and little flavour. Not toxic and edible. The name means snake strawberry, variously said to mean berries eaten by snakes or growing where snakes hide. Some regions apply the whole plant externally as a folk remedy for insect bites.", recipe: "生食（味は薄い）：毒はないのでそのまま食べられる。甘みがないのでジャムにする場合は砂糖を多めに。外用は生葉をもみ潰して虫刺されに塗る。", storage: "採取後すぐ食べる。冷蔵庫で1〜2日。ジャムにすると冷蔵で数週間保存できる。" },
+  { name: "野イチゴ", months: [4,5,6,7], en: "Wild Strawberry / Wild Berry", yomi: "のいちご やまいちご", emoji: "🍓", season: "春〜夏（4〜7月）", use: "果実・葉", notes: "野山に自生するバラ科の野生果実の総称。クサイチゴ・モミジイチゴ・ナワシロイチゴ・ヘビイチゴなど多くの種類がある。クサイチゴ（春）・モミジイチゴ（初夏）は甘みが強く生食できる。ヘビイチゴは食べられるが味は薄い。葉はハーブティーに使える。", notesEn: "A collective term for wild Rosaceae berries growing in hills and mountains. Includes many species such as kusa-ichigo, momiji-ichigo, nawashiro-ichigo, and hebi-ichigo. Kusa-ichigo (spring) and momiji-ichigo (early summer) are sweet enough to eat fresh. Hebi-ichigo is edible but bland. Leaves can be used for herbal tea.", recipe: "生食・ジャム・果実酒：甘みの強いクサイチゴやモミジイチゴはそのまま食べるのが一番。大量に採れたらジャムや果実酒に加工する。葉は乾燥させてフルーティーなハーブティーに。", storage: "採取後すぐ食べるのがベスト。冷蔵庫で1〜2日。ジャムにすると冷蔵で数週間、冷凍すると長期保存できる。" },
+  { name: "ナツハゼ", months: [9,10,11], en: "Japanese Blueberry (Natsuhaze)", yomi: "なつはぜ", emoji: "🫐", season: "秋（実）", use: "実・葉", notes: "山地に自生するブルーベリーの仲間。黒紫色の実は酸味と甘みがありそのまま食べられるほか、ジャムや果実酒にもなる。アントシアニンが豊富で視力改善・抗酸化作用が期待される。葉も紅葉が美しい。", notesEn: "A wild relative of blueberry found in mountain forests. The dark-purple berries are eaten fresh or made into jam and fruit wine. Rich in anthocyanins believed to improve vision and offer antioxidant benefits. Autumn foliage is also stunning." , recipe: "生食・ジャム・果実酒：そのまま食べるかジャムや果実酒に加工する。アントシアニンが豊富。", storage: "収穫後は冷蔵で数日。冷凍すると長期保存でき、解凍してジャムにできる。" },
+  { name: "クズ", months: [8,9,10,11], en: "Kudzu", yomi: "くず", emoji: "🌿", season: "秋（花・根）", use: "根・花・若葉", notes: "根からとれる葛粉は和菓子・葛湯・料理に使われる日本の伝統食材。根は漢方薬「葛根」として風邪の初期症状・肩こり・頭痛に使われる葛根湯の主成分。花は二日酔いに効くとされるプエラリンを含む。", notesEn: "Kudzu root starch is a traditional Japanese food ingredient used in sweets and kuzu-yu hot drink. The root Kakkon is the main ingredient of Kakkonto, a classic herbal formula for early-stage colds and stiff shoulders. Flowers contain puerarin said to help with hangovers." , recipe: "葛湯・葛切り・葛あん：根から採れる葛粉を熱湯で溶かして作る。体を温め消化を助ける。", storage: "葛粉は密閉容器で常温保存。根を乾燥させた生薬は冷暗所で長期保存。" },
+  { name: "よもぎ", months: [3,4,5,6,7,8,9], en: "Japanese Mugwort", yomi: "よもぎ", emoji: "🌿", season: "春〜秋", use: "全草", notes: "春の若葉は草餅・よもぎ餅の材料。止血・消炎・殺菌作用があり、切り傷に揉んで塗る民間療法が古くから行われてきた。乾燥させたものはお灸の「もぐさ」になる。アルテミシニン類似成分を含む。", notesEn: "Young spring leaves are used to make mugwort rice cakes. Has hemostatic, anti-inflammatory, and antibacterial properties; crushed leaves have been applied to cuts as folk first aid for centuries. Dried leaves are used as moxa for moxibustion therapy." , recipe: "草餅・お浸し・もぐさ：若葉を茹でてよもぎ餅に。お浸しや天ぷらにも。乾燥させるとお灸のもぐさになる。", storage: "生葉は塩茹でして冷凍保存が便利。乾燥葉は密閉容器で長期保存可。" },
+  { name: "どくだみ", months: [5,6,7,8,9], en: "Houttuynia / Dokudami", yomi: "どくだみ", emoji: "🌿", season: "夏", use: "全草", notes: "独特の臭いがある多年草。乾燥させるとどくだみ茶になり利尿・解毒・便秘改善・高血圧予防に効果があるとされる。フラボノイドのクエルシトリンを含む。生葉をつぶして皮膚の腫れや虫刺されに外用できる。", notesEn: "Despite its strong smell when fresh, dried dokudami becomes a mild herbal tea valued for diuretic, detoxifying, constipation-relieving, and blood-pressure-lowering effects. Contains the flavonoid quercitrin. Crushed fresh leaves can be applied to insect bites and swellings." , recipe: "どくだみ茶：乾燥させた葉を煎じる。生葉は虫刺されや腫れ物に外用する。果実酒にもなる。", storage: "乾燥させて密閉容器で常温1年以上保存できる。" },
+  { name: "たけのこ", months: [3,4,5], en: "Bamboo Shoot", yomi: "たけのこ", emoji: "🎋", season: "春（3〜5月）", use: "若芽", notes: "春の山菜の代表格。孟宗竹は3〜4月、真竹は5〜6月が旬。掘り出したらすぐにアク抜き（米ぬかと唐辛子で茹でる）をするのが鉄則。時間が経つほどえぐみが増す。たけのこご飯・若竹煮・天ぷらなど和食に欠かせない。", notesEn: "The quintessential spring mountain vegetable. Moso bamboo peaks in March–April; madake in May–June. Must be de-bittered immediately after harvest by boiling with rice bran and chilli. Flavour deteriorates quickly after digging. Essential in Japanese cuisine: bamboo shoot rice, young bamboo soup, and tempura." , recipe: "たけのこご飯・若竹煮・天ぷら・メンマ：掘り出したら即アク抜き（米ぬか＋唐辛子で30〜60分茹でる）してから調理。", storage: "アク抜き後は水に浸して冷蔵庫で5日ほど。水を毎日替えると長持ち。瓶詰めや乾燥メンマにすると長期保存できる。" },
+  { name: "うど", months: [3,4,5], en: "Japanese Spikenard (Udo)", yomi: "うど", emoji: "🌿", season: "春（3〜5月）", use: "若芽・茎・根", notes: "独特の香りを持つ春の山菜。白い柔らかい茎と葉先を食べる。アク抜きのため水にさらしてから使う。天ぷら・きんぴら・酢味噌和えが定番。「うどの大木」のことわざで有名だが、山うどは食用として重宝される。", notesEn: "A spring mountain vegetable with a distinctive aroma. The pale tender stems and leaf tips are eaten. Soak in water to remove bitterness. Classic preparations include tempura, kinpira, and dressed with sweet vinegar-miso. Famous in the Japanese proverb \'tall but useless,\' yet the mountain variety is highly prized as food." , recipe: "天ぷら・きんぴら・酢味噌和え：皮をむいて水にさらしてアク抜きしてから使う。茎・葉・花すべて食べられる。", storage: "水にさらして冷蔵庫で2〜3日。塩漬けや酢漬けにすると長期保存できる。" },
+  { name: "こごみ（クサソテツ）", months: [4,5], en: "Ostrich Fern (Kogomi)", yomi: "こごみ", emoji: "🌿", season: "春（4〜5月）", use: "若芽", notes: "わらびやぜんまいと違いアク抜き不要で手軽に食べられる山菜。くるんと巻いた新芽をさっと塩茹でするだけで食べられる。天ぷら・胡麻和え・マヨネーズ和えが定番。シダ植物の仲間で川沿いや山の湿った場所に生える。", notesEn: "Unlike bracken and royal fern, this fern needs no de-bittering, making it one of the easiest mountain vegetables to prepare. Simply blanch the tightly coiled fronds in salted water. Great in tempura, sesame dressing, or with mayonnaise. Grows in moist areas along streams and in mountain valleys." , recipe: "お浸し・天ぷら・胡麻和え・マヨネーズ和え：アク抜き不要でさっと塩茹でするだけで食べられる。", storage: "収穫後すぐ調理するのがベスト。塩茹でして冷凍保存すると1ヶ月保存可。" },
+  { name: "みょうが", months: [6,7,8,9], en: "Japanese Ginger (Myoga)", yomi: "みょうが", emoji: "🌿", season: "夏〜秋（6〜9月）", use: "花芽・若芽", notes: "日本固有のショウガ科の植物。花芽を薬味として使う。独特の香りと辛みがそうめん・冷奴・味噌汁の薬味に欠かせない。一度植えると毎年出てくる多年草。半日陰を好むので庭の日当たりの悪い場所に最適。食べると物忘れがひどくなるという俗説は根拠なし。", notesEn: "A plant unique to Japan in the ginger family. The flower buds are used as a pungent garnish. Its distinctive aroma and mild bite make it indispensable as a condiment for somen noodles, cold tofu, and miso soup. A perennial that returns every year once planted. Prefers partial shade — ideal for poorly lit garden spots. The folk belief that eating it causes forgetfulness has no scientific basis." , recipe: "薬味・甘酢漬け・みょうが汁：そうめん・冷奴・味噌汁の薬味に。甘酢漬けにすると保存食に。天ぷらも美味。", storage: "濡れた新聞紙に包んで冷蔵庫で1週間。甘酢漬けにすると冷蔵で数ヶ月保存できる。" },
+  { name: "つくし（スギナの胞子茎）", months: [2,3,4], en: "Horsetail Shoots (Tsukushi)", yomi: "つくし", emoji: "🌿", season: "早春（2〜4月）", use: "胞子茎", notes: "スギナの胞子茎で春一番の山菜のひとつ。袴（節の部分）を取り除いてから調理する。卵とじ・佃煮・天ぷらが定番料理。ほろ苦い春の味わいが特徴。採取後は早めに調理するのがコツ。土手や河川敷などでよく見られる。", notesEn: "The spore-bearing shoots of field horsetail and one of the very first spring mountain vegetables. Remove the papery sheaths at each node before cooking. Classic preparations include egg scramble, tsukudani simmered dish, and tempura. Its pleasant bitterness is the taste of early spring. Cook soon after harvest. Commonly found on riverbanks and embankments." , recipe: "卵とじ・佃煮・天ぷら：袴を取り除いてから調理。さっと茹でてアク抜きしてから卵とじや佃煮に。", storage: "収穫後すぐ調理。茹でて冷凍保存すると2週間保存できる。" },
+  { name: "ふきのとう", months: [1,2,3], en: "Butterbur Bud (Fukinoto)", yomi: "ふきのとう", emoji: "🌿", season: "早春（1〜3月）", use: "花芽", notes: "フキの花芽で、雪の下からいち早く顔を出す春の使者。独特の苦みと香りが春の訪れを感じさせる。天ぷらにするとサクサクで絶品。ふき味噌（刻んで味噌と炒める）にして保存食にもなる。アクが強いので水にさらすか塩もみしてから使う。", notesEn: "The flower buds of butterbur, the earliest herald of spring that pushes up through snow. Its distinctive bitterness and aroma signal the arrival of the new season. Exceptional in tempura. Also made into fuki-miso (chopped and stir-fried with miso) as a preserved condiment. Strong in bitterness — soak in water or salt before use." , recipe: "ふき味噌・天ぷら：刻んでみそと炒めるふき味噌はご飯のお供に最高。天ぷらにするとサクサク。", storage: "冷蔵庫で2〜3日以内に使う。ふき味噌にすると冷蔵で2週間、冷凍で3ヶ月保存できる。" },
+  { name: "タラの芽", months: [4,5], en: "Angelica Tree Bud (Tara-no-me)", yomi: "たらのめ", emoji: "🌿", season: "春（4〜5月）", use: "新芽", notes: "山菜の王様と呼ばれるタラノキの新芽。ほのかな苦みとコクのある風味が特徴。天ぷらにすると春の香りが際立ち絶品。スーパーでも春に出回るが、採りたては格別においしい。トゲのある枝に注意が必要。市場での流通期間が短く希少感がある。", notesEn: "The young buds of the Japanese angelica tree, called the king of mountain vegetables. Characterised by a gentle bitterness and rich, complex flavour. Outstanding in tempura, where the spring aroma really shines. Available in shops in spring but freshly picked is incomparably better. Be careful of the thorny branches. A short market season adds to its appeal." , recipe: "天ぷら：定番の食べ方。薄い衣でさっと揚げるだけで春の香りが際立つ。お浸しや炒め物にも。", storage: "収穫後すぐ調理がベスト。冷蔵で2〜3日。塩茹でして冷凍保存すると1ヶ月可。" },
+  { name: "山椒（さんしょう）", months: [4,5,6,7,8,9,10], en: "Japanese Pepper (Sansho)", yomi: "さんしょう", emoji: "🌿", season: "春〜秋", use: "葉・実・花芽", notes: "日本固有のスパイス。若葉（木の芽）は春の吸い物や和え物に、花芽（花山椒）は佃煮に、実は粉山椒として鰻や焼き鳥の薬味に使われる。爽やかな香りとピリリとした辛みが特徴。一度植えると毎年収穫できる落葉低木。", notesEn: "A spice unique to Japan. Young leaves (kinome) are used in spring clear soups and dressed dishes; flower buds make a flavourful tsukudani; the berries are ground into sansho powder, the classic condiment for eel and yakitori. Known for its fresh aroma and numbing, tingly heat. A deciduous shrub that produces every year once established." , recipe: "木の芽味噌・吸い物の飾り・粉山椒：若葉（木の芽）は手のひらで叩いて香りを出してから使う。実は醤油漬けや粉山椒に。", storage: "木の芽は濡れたキッチンペーパーに包んで冷蔵庫で2〜3日。実は醤油漬けか乾燥させて保存。" },
+  { name: "わらび", months: [4,5,6], en: "Bracken Fern", yomi: "わらび", emoji: "🌿", season: "春（4〜6月）", use: "若芽", notes: "春を代表する山菜のひとつ。若い葉が開く前のくるんと巻いた新芽を収穫する。アク抜き（重曹または灰を使った水さらし）が必須。おひたし・煮物・炒め物に。根茎からとれるわらび粉は和菓子の原料にもなる。生のまま食べると有毒なので必ずアク抜きをすること。", notesEn: "One of the most beloved spring mountain vegetables. Harvest the tightly coiled young fronds before the leaves unfurl. Must be de-bittered using baking soda or ash water. Used in boiled dishes, stir-fries, and the traditional sweet warabimochi. Never eat raw — always de-bitter first." , recipe: "お浸し・煮物・炒め物：必ずアク抜き（重曹か灰水で一晩）してから調理。わらび餅の原料にも。", storage: "塩蔵にすると長期保存できる。塩出ししてから使う。アク抜き後は冷蔵で4〜5日。" },
+  { name: "ぜんまい", months: [4,5,6], en: "Royal Fern (Zenmai)", yomi: "ぜんまい", emoji: "🌿", season: "春（4〜6月）", use: "若芽", notes: "わらびと並ぶ春の山菜の王様。綿毛のある新芽を収穫する。アク抜き後に干しぜんまいにして保存するのが伝統的。煮物・炊き込みご飯・和え物に使われる。鉄分・食物繊維が豊富。山の湿ったところや川沿いに自生する。", notesEn: "One of spring\'s premier mountain vegetables alongside bracken. Harvest the fluffy coiled young fronds. Traditionally de-bittered then dried for long-term storage. Rich in iron and dietary fibre. Used in simmered dishes, rice, and dressed salads. Grows wild in moist mountain areas and along streams." , recipe: "煮物・炊き込みご飯・和え物：アク抜き後に干しぜんまいにすると長期保存できる。戻してから調理。", storage: "干しぜんまいは常温で数ヶ月〜1年保存できる伝統的な保存食。アク抜き後は冷蔵で4〜5日。" },
+  { name: "カモミール", months: [4,5,6,7], en: "Chamomile", yomi: "かもみーる", emoji: "🌼", season: "春〜夏（4〜7月）", use: "花・葉", notes: "リンゴのような甘い香りが特徴のハーブ。ジャーマンカモミールとローマンカモミールの2種があり、一般的にはジャーマンが栽培しやすい。抗炎症・鎮静・消化促進作用があるとされ、ハーブティーとして世界中で親しまれている。不眠・ストレス・胃腸の不調に効果があるとされる。病害虫に強く初心者でも育てやすい。コンパニオンプランツとして野菜の近くに植えると生育を助けるともいわれる。", notesEn: "A herb with a sweet apple-like fragrance. German and Roman chamomile are the two main types; German is easier to grow. Has anti-inflammatory, calming, and digestive properties. Enjoyed worldwide as a herbal tea for insomnia, stress, and digestive complaints. Hardy and beginner-friendly. Also used as a companion plant near vegetables.", recipe: "カモミールティー：乾燥した花3〜4輪を熱湯で3〜5分蒸らすだけ。はちみつを加えると飲みやすい。就寝前に飲むとリラックス効果がある。生花はサラダやケーキの飾りにも。", storage: "花を摘んで風通しの良い場所で乾燥させてから密閉容器に入れ冷暗所で1年保存できる。生花は冷蔵庫で2〜3日。" },
+  { name: "アロエ", months: [1,2,3,4,5,6,7,8,9,10,11,12], en: "Aloe Vera", yomi: "あろえ", emoji: "🌵", season: "通年（室内・温暖地）", use: "葉肉・葉汁", notes: "「医者いらず」と呼ばれる代表的な民間薬草。葉の切り口から出るゲルには保湿・消炎・抗菌作用があり、火傷・日焼け・肌荒れに外用されてきた。食用アロエはヨーグルトやジュースに。寒さに弱く、霜が降りる地域では冬は室内に取り込む。", notesEn: "Called \'the doctor in a pot,\' aloe is one of the most well-known folk remedy plants. The clear gel from cut leaves has moisturising, anti-inflammatory, and antibacterial properties, applied externally to burns, sunburn, and dry skin. Edible varieties are used in yoghurt and juice. Frost-sensitive; bring indoors in winter in cold regions." , recipe: "外用（火傷・日焼け・肌荒れ）：葉を切ってゲルを患部に直接塗る。食用は皮をむいてヨーグルトやジュースに。", storage: "収穫した葉はラップして冷蔵庫で1週間。ゲル部分を取り出して冷凍保存も可能。" },
+  { name: "スギナ", months: [3,4,5,6,7,8,9,10], en: "Field Horsetail (Sugina)", yomi: "すぎな", emoji: "🌿", season: "春〜秋", use: "全草", notes: "土筆（つくし）の親草。ケイ素・カリウム・カルシウムが豊富で、乾燥させてスギナ茶にすると利尿・デトックス効果が期待される。骨・爪・髪の強化に役立つとされる。除草が難しい頑強な地下茎を持つ。", notesEn: "The parent plant of tsukushi horsetail shoots. Rich in silica, potassium, and calcium. Dried sugina tea is used for diuretic and detox effects and is said to strengthen bones, nails, and hair. Its deep rhizomes make it very difficult to eradicate." , recipe: "スギナ茶：乾燥させた茎葉を煎じる。ほうじ茶のように乾煎りしてから煮出すと飲みやすい。", storage: "乾燥させて密閉容器で常温1年以上保存できる。" },
+];
+
+// ===== 田んぼ・畑の草データ =====
+const weeds = [
+  { name: "ホトケノザ", edible: true, edibleNote: "花を生でそのまま食べられる。甘みがある。", months: [1,2,3,4,5], en: "Henbit Deadnettle", yomi: "ほとけのざ", emoji: "🌸", season: "春", type: "畑・田んぼ脇", notes: "春の七草の「ほとけのざ」はコオニタビラコのことで別種。このホトケノザはシソ科で食べられない。ピンク〜紫の唇形の花が美しく、越冬して早春に咲く。麦畑や菜園でよく見られる。", notesEn: "A pretty pink-flowered mint-family annual that overwinters and blooms in early spring. Not to be confused with the edible Kooni-tabirako of the Seven Spring Herbs. Common in wheat fields and vegetable gardens." },
+  { name: "エノコログサ", months: [7,8,9,10], en: "Foxtail Grass (Neko-jarashi)", yomi: "えのころぐさ", emoji: "🌾", season: "夏〜秋", type: "畑・路傍", notes: "「ネコじゃらし」として親しまれるイネ科の一年草。穂でネコをじゃらす草として有名。かつては穀物として栽培された粟の原種とされる。種子は鳥の餌になる。夏の畑に繁茂しやすい。", notesEn: "Widely known as neko-jarashi (cat teaser) for its fluffy seed heads used to play with cats. Considered the wild ancestor of millet. Seeds are a food source for wild birds. Spreads quickly in summer fields." },
+  { name: "カラスノエンドウ", edible: true, edibleNote: "若いさやを塩茹でしてそのまま食べられる。", months: [3,4,5], en: "Common Vetch (Karasu-no-endo)", yomi: "からすのえんどう", emoji: "🌸", season: "春", type: "畑・田んぼ脇", notes: "春に赤紫の小花を咲かせるマメ科の野草。若いさやは塩茹でして食べられる。根粒菌を持ち土の窒素固定に役立つ。種が熟すと黒くなることがカラスの名前の由来。春の畦道でよく見られる。", notesEn: "A legume with small red-purple flowers in spring. Young pods can be boiled and eaten. Root nodules fix atmospheric nitrogen, enriching the soil. Named for its black seeds when ripe. Common on spring paddy banks." },
+  { name: "オオイヌノフグリ", months: [2,3,4,5], en: "Bird's-eye Speedwell", yomi: "おおいぬのふぐり", emoji: "💙", season: "春", type: "畑・路傍", notes: "早春に青い小花を一面に咲かせる帰化植物。ヨーロッパ原産。春の訪れを告げる花として農家に親しまれる。花は天気が良い時だけ開く。草丈は低くグラウンドカバー的に広がる。", notesEn: "A naturalised plant from Europe that carpets the ground with tiny blue flowers in early spring. Flowers open only in fine weather. A welcome sign of the changing seasons for farmers." },
+  { name: "ヒメジョオン（ハルジオン）", edible: true, edibleNote: "若葉を天ぷらにできる。", months: [4,5,6,7,8], en: "Fleabane (Himejoon / Harujion)", yomi: "ひめじょおん はるじおん", emoji: "🌸", season: "春〜夏", type: "畑・路傍・休耕地", notes: "白〜薄ピンクの小菊に似た花を咲かせる帰化植物。ハルジオンは春に、ヒメジョオンは夏に咲く。休耕地や畦道に繁茂しやすい。若葉は食べられ天ぷらにも使われる。", notesEn: "Naturalised plants with small daisy-like white to pale-pink flowers. Harujion blooms in spring; Himejoon in summer. Spreads easily on fallow land and field margins. Young leaves are edible in tempura." },
+  { name: "ゼニゴケ", months: [1,2,3,4,5,6,7,8,9,10,11,12], en: "Common Liverwort", yomi: "ぜにごけ", emoji: "🟢", season: "通年", type: "水田・湿地・石畳", notes: "湿った場所に広がる平たいコケ。水田の畦道や庭の湿った場所に生える。一度繁殖すると除去が難しい。土壌が過湿・酸性になっているサインでもある。石灰散布や排水改善が対策になる。", notesEn: "A flat liverwort that spreads on persistently moist surfaces. Once established, it is difficult to remove. Its presence signals overly wet or acidic conditions; lime application and improved drainage help." },
+  { name: "コニシキソウ", months: [6,7,8,9,10], en: "Creeping Spurge", yomi: "こにしきそう", emoji: "🌿", season: "夏〜秋", type: "畑・路傍", notes: "地面を這うように広がる小型の帰化植物。茎を切ると白い乳液が出る。繁殖力が強く夏の畑に密生する。乳液は皮膚に触れるとかぶれることがある。種子が弾け飛んで一気に広がる。", notesEn: "A small prostrate naturalised plant that hugs the ground. Stems exude white latex when broken, which can irritate skin. Highly prolific; seeds burst and scatter widely in summer fields." },
+  { name: "ナズナ（ペンペングサ）", edible: true, edibleNote: "春の七草。若葉をお浸し・味噌汁に。", months: [1,2,3,4,5], en: "Shepherd's Purse", yomi: "なずな ぺんぺんぐさ", emoji: "🌿", season: "春", type: "畑・田んぼ脇", notes: "春の七草のひとつ。三角形の実がペンペンという音に聞こえることからペンペングサの名がある。若葉は食べられ、お浸しや味噌汁に入れる。止血・利尿作用がある薬草でもある。", notesEn: "A member of the Seven Spring Herbs. Triangular seed pods rattle like a shamisen plectrum. Has hemostatic, diuretic, and blood-pressure-lowering properties. Young leaves are used in seven-herb porridge, miso soup, and boiled dishes." },
+  { name: "スズメノカタビラ", months: [1,2,3,4,5,6,7,8,9,10,11,12], en: "Annual Bluegrass", yomi: "すずめのかたびら", emoji: "🌾", season: "通年", type: "畑・田んぼ・芝生", notes: "年間を通じて生育するイネ科の小型草。芝生や畑のいたるところに生える。除草剤が効きにくい種類もあり農家を悩ませる難防除雑草のひとつ。早めに手で引き抜くのが有効。", notesEn: "A small grass-family annual that grows year-round in fields, paddies, and lawns. Some biotypes have developed herbicide resistance, making it a troublesome weed. Early hand-pulling is the most effective control." },
+  { name: "チガヤ", edible: true, edibleNote: "春の白い穂先は甘みがあり生でかじれる。", months: [4,5,6,7,8], en: "Cogon Grass (Chigaya)", yomi: "ちがや", emoji: "🌾", season: "春〜夏（穂）", type: "田んぼ脇・畦道", notes: "畦道や土手に群生するイネ科の多年草。白い綿毛の穂が春に美しい。根茎は漢方薬「茅根（ぼうこん）」として利尿・解熱に使われる。地下茎が深く繁茂すると除草が大変。", notesEn: "A perennial grass that forms dense colonies on paddy banks and embankments. Its white silky seed heads are beautiful in spring. The root is used in herbal medicine for diuresis and fever reduction. Deep rhizomes make it very difficult to eradicate once established." },
+  { name: "セイタカアワダチソウ", months: [9,10,11], en: "Goldenrod (Tall)", yomi: "せいたかあわだちそう", emoji: "🌼", season: "秋", type: "休耕地・田んぼ脇", notes: "秋に黄色い穂状の花を咲かせる北米原産の帰化植物。根から他の植物の成長を抑える物質（アレロパシー）を分泌する。しかし長年繁殖すると自らのアレロパシーで自滅することも知られる。蜜源にもなる。", notesEn: "A tall North American import that turns roadsides and fallow paddies golden in autumn. It releases allelopathic chemicals that suppress other plants, but these same chemicals eventually suppress its own growth too. Also a valuable nectar source for bees." },
+  { name: "オオバコ", edible: true, edibleNote: "若葉を天ぷら・お浸しに。独特の食感がある。", months: [4,5,6,7,8,9,10], en: "Plantain (Oobako)", yomi: "おおばこ", emoji: "🌿", season: "春〜秋", use: "全草", type: "畦道・踏み荒らされた場所", notes: "踏まれても枯れない踏圧に強い多年草。道端や畦道の踏み荒らされた場所に生える。葉を乾燥させたオオバコ茶は咳・気管支炎・利尿に使われてきた薬草でもある。種子は膨らんでサイリウムの代わりにもなる。", notesEn: "A tough perennial that thrives under repeated foot traffic on paddy banks and paths. Dried leaves are used as oobako tea for coughs, bronchitis, and diuretic effects. Seeds swell in water and can be used like psyllium husk." },
+  { name: "クローバー", months: [4,5,6,7,8,9,10], en: "White Clover", yomi: "くろーばー", emoji: "🍀", season: "春〜秋", type: "畦道・休耕地", notes: "白い花を咲かせるシロツメクサ。根粒菌で大気中の窒素を固定し土を豊かにする緑肥植物。ミツバチの蜜源としても重要。四つ葉は幸運の象徴。踏まれても強く、畦道の法面保護にも役立つ。", notesEn: "White clover with familiar trifoliate leaves and white flowers. Root nodules fix atmospheric nitrogen, enriching the soil. An important nectar plant for honeybees. Four-leaf clovers are a classic symbol of good luck. Grows well as groundcover on paddy banks." },
+  { name: "レンゲソウ（レンゲ）", months: [3,4,5], en: "Chinese Milk Vetch (Renge)", yomi: "れんげそう れんげ", emoji: "🌸", season: "春", type: "水田（緑肥）", notes: "春の水田を彩るピンクの花。マメ科で根粒菌が窒素を固定するため昔から水田の緑肥として栽培されてきた。ミツバチの蜜源としても最高で「れんげ蜂蜜」は高級品。近年は見られる田んぼが減っている。", notesEn: "Pink-flowered Chinese milk vetch that brightens paddy fields in spring. A legume grown as green manure for rice paddies since ancient times. One of the finest nectar plants for bees and renge honey is a premium product. Sadly fewer paddies support it nowadays." },
+  { name: "ヘアリーベッチ", months: [4,5,6], en: "Hairy Vetch", yomi: "へありーべっち", emoji: "🌸", season: "春（花）", type: "水田・畑（緑肥）", notes: "紫色の花を咲かせるマメ科の緑肥植物。根粒菌で大量の窒素を固定し、すき込むと良質な有機肥料になる。除草・土壌改良・保水に役立つ。有機農業・自然農法の水田でよく利用される。", notesEn: "A hairy-stemmed legume with clusters of purple flowers, grown as a green manure crop. Fixes large amounts of nitrogen when ploughed in as high-quality organic fertiliser. Also suppresses weeds, improves soil structure, and retains moisture. Widely used in organic and natural farming rice paddies." },
+  { name: "ヒエ（ノビエ）", months: [6,7,8,9], noImage: true, en: "Barnyard Grass (Nobie)", yomi: "ひえ のびえ", emoji: "🌾", season: "夏〜秋", type: "水田", notes: "水田で最も問題になるイネ科の難防除雑草。見た目がイネに酷似しており区別が難しい。イネより生育が早く放置すると大幅な減収になる。除草剤の多くがヒエ対策のために使われる。📌 同じ「ひえ」でも栽培種の稗は雑穀で全く別の植物。🔗 <a href=\'https://www.jeinou.com/benri/rice/2008/06/100938.html\' target=\'_blank\' style=\'color:#b45309;\'>ノビエの見分け方・詳細はこちら</a>", notesEn: "The most troublesome weed in Japanese rice paddies, virtually indistinguishable from young rice. Grows faster than rice and causes serious yield losses. 📌 Note: cultivated millet (hie) is a completely different plant. 🔗 <a href=\'https://www.jeinou.com/benri/rice/2008/06/100938.html\' target=\'_blank\' style=\'color:#b45309;\'>More info on identifying barnyard grass</a>" },
+  { name: "コナギ", edible: true, edibleNote: "若葉をお浸しにできる。ぬめりがある。", months: [6,7,8,9], en: "Monochoria (Konagi)", yomi: "こなぎ", emoji: "🌿", season: "夏", type: "水田", notes: "水田の代表的な雑草。水面に浮かぶように葉を広げて光を奪う。除草剤への抵抗性を持つ個体が増えている難防除雑草。若い葉は食べられ、ぬめりがあってお浸しにできる。", notesEn: "A representative paddy weed with broad floating leaves that shade out rice. Biotypes resistant to herbicides are increasingly common, making it a serious problem for growers." },
+  { name: "スベリヒユ", edible: true, edibleNote: "お浸し・炒め物に。塩茹でして食べる。山形では「ひょう」として伝統野菜。", months: [6,7,8,9,10], en: "Purslane (Suberihiyu)", yomi: "すべりひゆ", emoji: "🌿", season: "夏", type: "畑", notes: "夏の畑に繁茂する多肉質の一年草。オメガ3脂肪酸を含む栄養価の高い野草で、山形県では「ひょう」と呼ばれ食用にされる伝統野菜でもある。ほんのり酸味があり炒め物・和え物に使える。", notesEn: "A succulent annual that thrives in summer fields. Rich in omega-3 fatty acids and actually nutritious and edible. In Yamagata Prefecture it is called hyou and eaten as a traditional vegetable. Has a mild sourness and is good stir-fried or in dressed salads." },
+  { name: "メヒシバ", months: [6,7,8,9,10], en: "Crabgrass (Mehishiba)", yomi: "めひしば", emoji: "🌾", season: "夏〜秋", type: "畑・路傍", notes: "夏の畑を代表するイネ科の一年草。繁殖力が強く短期間で大型化する。種子が大量に落ちて翌年も大量発生する。早期に抜き取るのが効果的。鳥の餌になる種子を大量につける。", notesEn: "A common grass-family annual of summer fields. Spreads very quickly and grows large in a short time. Produces masses of seeds that persist in the soil for the following year. Early removal by hand is the most effective strategy. Seeds are a valuable food source for wild birds." },
+];
+
+// Wikipedia画像を非同期取得してカードに差し込む
+const imgCache = {};
+
+async function fetchWikiImage(name, cardId, wikiSearch) {
+  const cacheKey = wikiSearch || name;
+  if (imgCache[cacheKey] === null) return;
+  if (imgCache[cacheKey]) {
+    showImage(cardId, imgCache[cacheKey]);
+    return;
+  }
+  const wrap = document.getElementById('img_' + cardId);
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="wiki-img-loading">🔍 画像を読み込み中...</div>';
+  try {
+    const searchTerm = wikiSearch || name.replace(/（[^）]*）/g, '').replace(/\([^)]*\)/g, '').trim();
+    const query = encodeURIComponent(searchTerm);
+    const url = `https://ja.wikipedia.org/api/rest_v1/page/summary/${query}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('not found');
+    const data = await res.json();
+    if (data.thumbnail && data.thumbnail.source) {
+      imgCache[cacheKey] = data.thumbnail.source;
+      showImage(cardId, data.thumbnail.source);
+    } else {
+      imgCache[cacheKey] = null;
+      wrap.innerHTML = '';
+    }
+  } catch {
+    imgCache[cacheKey] = null;
+    if (wrap) wrap.innerHTML = '';
+  }
+}
+
+function showImage(cardId, src) {
+  const wrap = document.getElementById('img_' + cardId);
+  if (wrap) wrap.innerHTML = `<img class="wiki-img" src="${src}" alt="" onerror="this.parentNode.innerHTML=''">`;
+}
+
+function makeSimpleCard(item, prefix) {
+  const id = prefix + '_' + item.name;
+  const isOpen = openCard[id];
+  const typeStr = item.type ? `<div class="detail-row">📍 ${item.type}</div>` : '';
+  const seasonStr = item.season ? `<div class="detail-row">🗓 ${item.season}</div>` : '';
+  const useStr = item.use ? `<div class="detail-row">💊 利用部位: ${item.use}</div>` : '';
+  const edibleStr = item.edible ? `<div class="detail-row" style="color:#16a34a;font-weight:600;">🍽 ${currentLang==='en'?'Edible: ':'食べ方: '}${item.edibleNote||''}</div>` : '';
+  const edibleBadge = item.edible ? `<span style="font-size:11px;background:#dcfce7;color:#16a34a;border-radius:6px;padding:1px 6px;margin-left:6px;font-weight:600;">🍽</span>` : '';
+  const displayName = (currentLang === 'en' && item.en)
+    ? item.en
+    : (currentLang === 'both' && item.en)
+    ? `${item.name} <span class="veg-name-sub">${item.en}</span>`
+    : item.name;
+  const noteText = currentLang === 'en'
+    ? (item.notesEn || item.notes)
+    : currentLang === 'both' && item.notesEn
+    ? `${item.notes}<div class="detail-note-en">${item.notesEn}</div>`
+    : item.notes;
+  const recipeStr = item.recipe ? `<div class="detail-recipe">🍳 ${item.recipe}</div>` : '';
+  const storageStr = item.storage ? `<div class="detail-storage">📦 ${item.storage}</div>` : '';
+  // 月バーグラフ（months フィールドがある場合）
+  const barHtml = item.months && item.months.length
+    ? makeMiniBar(
+        item.months,
+        'harvest',
+        currentLang==='en' ? '🟠Active season' : '🟠見られる時期'
+      )
+    : '';
+  return `<div class="veg-card" onclick="toggleCard('${id}')" data-card-id="${id}">
+    <div class="veg-card-header">
+      <span class="veg-emoji">${item.emoji}</span>
+      <div style="flex:1">
+        <div class="veg-name">${displayName}${edibleBadge}</div>
+        ${barHtml}
+      </div>
+      <span class="arrow">${isOpen?'▲':'▼'}</span>
+    </div>
+    <div class="veg-detail ${isOpen?'open':''}">
+      ${item.noImage ? '' : `<div id="img_${id}" class="wiki-img-wrap"></div>`}
+      <div class="detail-note">💡 ${noteText}</div>
+      ${edibleStr}${seasonStr}${useStr}${typeStr}
+      ${recipeStr}${storageStr}
+    </div>
+  </div>`;
+}
+
+// ===== 多年草データ =====
+// 野菜・薬草・畑の草から多年草に該当するものを抽出
+const perennialVeg = [
+  { name: "アスパラガス", en: "Asparagus", emoji: "🌱", category: "野菜", note: "定植後10年以上収穫できる。根が充実するまで2〜3年かかるが、一度根付けば毎年春に芽吹く。", noteEn: "Produces for over 10 years once established. Takes 2–3 years before a full harvest. New spears emerge every spring." },
+  { name: "山芋", en: "Japanese Yam", emoji: "🍠", category: "野菜", note: "地下茎から毎年芽吹く多年草。むかごで増やすこともできる。", noteEn: "Regrows from underground tubers each year. Can also be propagated from small bulbils. Deep soil preparation makes harvest easier." },
+  { name: "菊芋", en: "Jerusalem Artichoke", emoji: "🌻", category: "野菜", note: "一度植えると毎年育つ。放任でも旺盛に繁殖し、2m以上に育つことも。", noteEn: "Returns vigorously from tubers each year. Very low-maintenance and can grow over 2 m tall. Bears yellow flowers in autumn." },
+  { name: "山わさび（西洋わさび）", en: "Horseradish", emoji: "🌿", category: "野菜", note: "根茎から毎年育つ多年草。一度植えると広がり続ける。", noteEn: "Regrows from rhizomes every year and spreads prolifically once established. Grate the root for a fiery condiment." },
+  { name: "ニラ", en: "Chinese Chives", emoji: "🌿", category: "野菜", note: "根元を残して刈ると何度も再生する。毎年春から秋に繰り返し収穫できる。", noteEn: "Regrows repeatedly from spring to autumn after cutting. Leave about 5 cm above the base and it will regenerate. Essential for gyoza." },
+  { name: "ミント", en: "Mint", emoji: "🌿", category: "野菜", note: "地下茎で旺盛に広がる多年草。プランター栽培がおすすめ。", noteEn: "Spreads vigorously by underground runners — containers or root barriers are recommended. Many varieties available." },
+  { name: "アロエ", en: "Aloe Vera", emoji: "🌵", category: "野菜", note: "通年収穫できる多肉植物の多年草。乾燥に強く手がかからない。株周囲に子株が出て毎年増えていく。冬は室内に取り込む。", noteEn: "A perennial succulent harvestable year-round. Extremely drought-tolerant and low-maintenance. Produces offsets each year. Bring indoors in winter." },
+  { name: "アーティチョーク", en: "Artichoke", emoji: "🌸", category: "野菜", note: "一度植えると毎年収穫できる大型多年草。観賞価値も高い。", noteEn: "A large perennial that produces every year once established. The flower buds are edible and the plant is ornamental too." },
+  { name: "フェンネル", en: "Fennel", emoji: "🌿", category: "野菜", note: "丈夫で育てやすい多年草。葉・茎・根・種すべて食べられる。", noteEn: "A hardy perennial that regrows each year. Every part — leaves, stems, seeds, and bulb — is edible." },
+  { name: "ウコン", en: "Turmeric", emoji: "🟡", category: "野菜", note: "根茎から毎年育つ。春ウコン・秋ウコンなど種類がある。", noteEn: "Grows from rhizomes and returns each year. Spring and autumn varieties exist. Contains curcumin valued for health." },
+  { name: "チョロギ", en: "Chorogi (Chinese Artichoke)", emoji: "🌀", category: "野菜", note: "シソ科の多年草。一度植えると毎年根茎が増える。", noteEn: "A mint-family perennial whose spiral tubers multiply each year. A longevity symbol used in New Year's dishes." },
+  { name: "らっきょう", en: "Rakkyo", emoji: "🧅", category: "野菜", note: "球根が毎年分球して増える多年性植物。", noteEn: "Bulbs multiply and divide each year, increasing the harvest over time. Traditionally pickled in sweet vinegar." },
+  { name: "わけぎ", en: "Wakegi", emoji: "🧅", category: "野菜", note: "球根が毎年増える多年性ネギ。春と秋の年2回収穫できる。", noteEn: "Bulbs multiply each year, providing two harvests in spring and autumn. Mild and easy to use as a garnish." },
+  { name: "蓮根", en: "Lotus Root", emoji: "🪷", category: "野菜", note: "地下茎で毎年広がる多年草。水田や大型容器で栽培する。", noteEn: "Spreads by underground rhizomes each year in paddy or deep containers. Beautiful flowers bloom in summer." },
+  { name: "ドラゴンヘッド（モルドバ）", en: "Dracocephalum", emoji: "🌿", category: "野菜", note: "多年草のハーブ。一度植えると毎年育つ。", noteEn: "A hardy perennial herb with a lemon-like aroma. Regrows each year and bears lovely pale-purple flowers." },
+];
+
+const perennialHerbs = [
+  { name: "ビワ", en: "Loquat", emoji: "🍃", category: "薬草", note: "常緑の高木。葉を通年収穫でき、実は初夏に実る。長寿命で数十年育つ。", noteEn: "An evergreen tree that lives for many decades. Leaves can be harvested year-round for tea; fruit ripens in early summer." },
+  { name: "クワ", en: "Mulberry", emoji: "🍃", category: "薬草", note: "落葉高木。毎年葉と実を収穫できる。蚕の食草としても有名。", noteEn: "A deciduous tree yielding leaves and fruit every year. Leaf tea is valued for blood sugar management." },
+  { name: "ヤブカンゾウ", en: "Orange Daylily", emoji: "🌸", category: "薬草", note: "根茎で毎年増える多年草。春の若芽と夏の花を毎年収穫できる。", noteEn: "Spreads from rhizomes each year. Young spring shoots and summer flowers are both edible and medicinal." },
+  { name: "ハギ", en: "Bush Clover", emoji: "🌸", category: "薬草", note: "落葉低木。毎年根元から新芽を出す。秋の七草のひとつ。", noteEn: "A deciduous shrub sending up new shoots from the base every year. One of Japan's Seven Autumn Grasses." },
+  { name: "アザミ", en: "Thistle", emoji: "🌸", category: "薬草", note: "根が残り毎年再生する多年草。地域によって多くの種類がある。", noteEn: "Roots persist and the plant regrows each year. Young shoots and roots are eaten as mountain vegetables." },
+  { name: "ヒキオコシ", en: "Rabdosia Herb", emoji: "🌿", category: "薬草", note: "地下茎から毎年育つ多年草。別名エンメイソウ（延命草）。", noteEn: "Regrows from underground stems each year. Its intensely bitter compounds are used to aid digestion." },
+  { name: "タラノキ", en: "Japanese Angelica Tree", emoji: "🌿", category: "薬草", note: "落葉低木。毎年春に新芽（タラの芽）を出す。", noteEn: "A deciduous small tree producing new buds every spring. Young buds (tara-no-me) are the king of mountain vegetables." },
+  { name: "フキ", en: "Butterbur", emoji: "🌿", category: "薬草", note: "地下茎で広がる多年草。春先にふきのとうが出る。日陰でもよく育つ。", noteEn: "Spreads by rhizomes and regrows reliably each year. Among the earliest edible spring shoots." },
+  { name: "イタドリ", en: "Japanese Knotweed", emoji: "🌿", category: "薬草", note: "根茎が旺盛に広がる多年草。毎年太い茎を出す。", noteEn: "An extremely vigorous perennial regrows from deep roots every year. Contains resveratrol with antioxidant properties." },
+  { name: "ノブドウ", en: "Wild Grape", emoji: "🍇", category: "薬草", note: "つる性の落葉低木。毎年秋に美しい実をつける。", noteEn: "A deciduous climbing shrub that regrows each year. Bears beautiful multicoloured berries in autumn." },
+  { name: "カキ（柿）", en: "Japanese Persimmon", emoji: "🍊", category: "薬草", note: "落葉高木。一度植えると数十年にわたり実をつける。", noteEn: "A deciduous tree that bears fruit for many decades. Both leaves and fruit are useful." },
+  { name: "ナツハゼ", en: "Japanese Blueberry", emoji: "🫐", category: "薬草", note: "落葉低木。毎年秋に黒紫色の実をつける。", noteEn: "A deciduous shrub producing berries every autumn. Rich in anthocyanins like its blueberry relatives." },
+  { name: "クズ", en: "Kudzu", emoji: "🌿", category: "薬草", note: "根が深く広がる多年草。毎年旺盛につるを伸ばす。根からくず粉が採れる。", noteEn: "An extremely vigorous perennial regrows from deep roots each year. Root starch is used in traditional sweets and herbal medicine." },
+  { name: "よもぎ", en: "Japanese Mugwort", emoji: "🌿", category: "薬草", note: "地下茎で広がる多年草。毎年春に新芽が出て秋まで収穫できる。", noteEn: "Spreads by rhizomes and regrows from spring to autumn each year. Used in rice cakes and as moxa for moxibustion." },
+  { name: "どくだみ", en: "Houttuynia", emoji: "🌿", category: "薬草", note: "地下茎で旺盛に広がる多年草。一度根付くと毎年出てくる。", noteEn: "Spreads prolifically by underground stems each year. Dried leaves make a healthful herbal tea." },
+  { name: "スギナ", en: "Field Horsetail", emoji: "🌿", category: "薬草", note: "非常に強い多年草。地下茎が深く、除草が難しいほど旺盛。", noteEn: "An extremely hardy perennial with deep rhizomes that regrows every year. Rich in silica and calcium." },
+  { name: "タンポポ", en: "Dandelion", emoji: "🌻", category: "薬草", note: "多年草。根が深く残り毎年花を咲かせる。", noteEn: "A deep-rooted perennial flowering from spring to autumn each year. Leaves, flowers, and roots are all edible and medicinal." },
+];
+
+const perennialWeeds = [
+  { name: "スギナ", en: "Field Horsetail", emoji: "🌿", category: "畑の草", note: "地下茎が深く旺盛な多年草。除草が最も難しい草の一つ。" },
+  { name: "チガヤ", en: "Cogon Grass", emoji: "🌾", category: "畑の草", note: "地下茎で広がる多年草。根が深く繁茂すると除草が大変。", noteEn: "Forms dense colonies from creeping rhizomes each year. Silky seed heads are beautiful in spring but the plant is hard to control." },
+  { name: "スズメノカタビラ", en: "Annual Bluegrass", emoji: "🌾", category: "畑の草", note: "通年生育する多年草的な草。一年中見られる。", noteEn: "A year-round perennial-like grass found in fields, paddies, and lawns. Some biotypes are herbicide-resistant." },
+  { name: "オオバコ", en: "Plantain", emoji: "🌿", category: "畑の草", note: "踏まれても再生する強靭な多年草。畦道や踏み荒らされた場所に多い。", noteEn: "A tough perennial that withstands heavy foot traffic and regrows each year. Dried leaves used in herbal tea." },
+  { name: "クローバー", en: "White Clover", emoji: "🍀", category: "畑の草", note: "匍匐茎で広がる多年草。根粒菌で土を肥やす緑肥植物。", noteEn: "Spreads by stolons to form a dense mat each year. Fixes atmospheric nitrogen, enriching the soil naturally." },
+  { name: "セイタカアワダチソウ", en: "Goldenrod", emoji: "🌼", category: "畑の草", note: "地下茎で広がる多年草。一度根付くと毎年秋に大繁殖する。", noteEn: "Spreads aggressively by rhizomes and seeds each year. Releases allelopathic chemicals that suppress competing plants." },
+  { name: "ゼニゴケ", en: "Common Liverwort", emoji: "🟢", category: "畑の草", note: "多年生のコケ。湿った環境で通年生育する。", noteEn: "A perennial liverwort persisting year-round in moist spots. Its presence signals overly wet or acidic soil." },
+];
+
+function renderPerennials() {
+  const el = document.getElementById('all-perennial-list');
+  const allPerennials = [...perennialVeg, ...perennialHerbs, ...perennialWeeds];
+
+  // カテゴリ別の色設定
+  const catColor = {
+    '野菜':   { color: '#16a34a', bg: '#f0fdf4', border: '#86efac' },
+    '薬草':   { color: '#065f46', bg: '#ecfdf5', border: '#6ee7b7' },
+    '畑の草': { color: '#713f12', bg: '#fefce8', border: '#fde68a' },
+  };
+
+  const header = `<div style="font-size:13px;color:#6b7280;margin-bottom:12px;padding:8px 12px;background:#f5f3ff;border-radius:10px;">
+    🌳 ${currentLang==='en'?'Perennial plants — grow back every year':'多年草・多年性植物の一覧 — 一度植えると毎年育つ'} (${allPerennials.length}種)
+  </div>`;
+
+  const sections = ['野菜', '薬草', '畑の草'].map(cat => {
+    const list = allPerennials.filter(p => p.category === cat);
+    const c = catColor[cat];
+    const catLabel = currentLang === 'en'
+      ? (cat === '野菜' ? 'Vegetables' : cat === '薬草' ? 'Medicinal Herbs' : 'Field Weeds')
+      : cat;
+    const cards = list.map(p => {
+      const id = 'p_' + p.name;
+      const isOpen = openCard[id];
+      const displayName = currentLang === 'en' ? (p.en || p.name)
+        : currentLang === 'both' && p.en ? `${p.name} <span class="veg-name-sub">${p.en}</span>`
+        : p.name;
+      const noteText = currentLang === 'en' ? (p.noteEn || p.note)
+        : currentLang === 'both' && p.noteEn ? `${p.note}<div class="detail-note-en">${p.noteEn}</div>`
+        : p.note;
+      // 元データから月情報を取得してバーグラフ生成
+      const srcVeg  = vegetables.find(v => v.name === p.name);
+      const srcHerb = herbs.find(h => h.name === p.name);
+      const srcWeed = weeds.find(w => w.name === p.name);
+      const srcFruit = fruitTrees.find(f => f.name === p.name);
+      let barHtml = '';
+      if (srcVeg) {
+        const sowM  = srcVeg.sow || [];
+        const seedM = srcVeg.seedling || [];
+        const harvM = srcVeg.harvest || [];
+        const cells = Array.from({length:12}, (_,i) => {
+          const m = i+1;
+          let cls = harvM.includes(m) ? 'harvest' : seedM.includes(m) ? 'seedling' : sowM.includes(m) ? 'sow' : '';
+          if (m === currentMonth) cls += ' now';
+          return `<div class="mini-cell ${cls}"></div>`;
+        }).join('');
+        const labels = Array.from({length:12}, (_,i) => {
+          const m = i+1; const lbl = currentLang==='en' ? monthsEn[i].slice(0,1) : m;
+          return `<div class="mini-label ${m===currentMonth?'now-label':''}">${lbl}</div>`;
+        }).join('');
+        const lg1 = currentLang==='en'?'🟢Sow':'🟢種まき';
+        const lg2 = currentLang==='en'?'🟡Transplant':'🟡苗';
+        const lg3 = currentLang==='en'?'🔴Harvest':'🔴収穫';
+        barHtml = `<div class="mini-labels">${labels}</div><div class="mini-bar">${cells}</div><div class="mini-legend"><span>${lg1}</span><span>${lg2}</span><span>${lg3}</span></div>`;
+      } else if (srcHerb && srcHerb.months) {
+        barHtml = makeMiniBar(srcHerb.months, 'harvest', currentLang==='en'?'🟠Active season':'🟠見られる時期');
+      } else if (srcWeed && srcWeed.months) {
+        barHtml = makeMiniBar(srcWeed.months, 'harvest', currentLang==='en'?'🟠Active season':'🟠見られる時期');
+      } else if (srcFruit) {
+        barHtml = makeFruitMiniBar(srcFruit.plant || [], srcFruit.harvest || []);
+      }
+      return `<div class="veg-card" onclick="toggleCard('${id}')" data-card-id="${id}">
+        <div class="veg-card-header">
+          <span class="veg-emoji">${p.emoji}</span>
+          <div style="flex:1">
+            <div class="veg-name">${displayName}</div>
+            <div style="font-size:12px;color:${c.color};font-weight:600;margin-top:2px;">🌳 ${currentLang==='en'?'Perennial':'多年草'}</div>
+            ${barHtml}
+          </div>
+          <span class="arrow">${isOpen?'▲':'▼'}</span>
+        </div>
+        <div class="veg-detail ${isOpen?'open':''}">
+          <div id="img_${id}" class="wiki-img-wrap"></div>
+          <div class="detail-note">💡 ${noteText}</div>
+          ${(() => {
+            // 元データから詳細情報を追加表示
+            if (srcVeg) {
+              const sowStr  = srcVeg.sow.length ? srcVeg.sow.map(m=>monthLabel(m)).join('・') : '―';
+              const seedStr = srcVeg.seedling.length ? srcVeg.seedling.map(m=>monthLabel(m)).join('・') : (currentLang==='en'?'Direct':'直まき');
+              const harvStr = srcVeg.harvest.map(m=>monthLabel(m)).join('・');
+              const srcNote = currentLang==='en' ? (srcVeg.notesEn||srcVeg.notes) : currentLang==='both'&&srcVeg.notesEn ? `${srcVeg.notes}<div class="detail-note-en">${srcVeg.notesEn}</div>` : srcVeg.notes;
+              return `<div class="detail-note" style="margin-top:6px;">🥬 ${srcNote}</div>
+                <div class="detail-row">🌱 ${currentLang==='en'?'Sow':'種まき'}: ${sowStr}</div>
+                <div class="detail-row">🪴 ${currentLang==='en'?'Seedling':'苗の植え付け'}: ${seedStr}</div>
+                <div class="detail-row">🧺 ${currentLang==='en'?'Harvest':'収穫'}: ${harvStr}</div>
+                ${srcVeg.recipe ? `<div class="detail-recipe">🍳 ${currentLang==='en'?(srcVeg.recipeEn||srcVeg.recipe):srcVeg.recipe}</div>` : ''}
+                ${srcVeg.storage ? `<div class="detail-storage">📦 ${currentLang==='en'?(srcVeg.storageEn||srcVeg.storage):srcVeg.storage}</div>` : ''}`;
+            } else if (srcHerb) {
+              const srcNote = currentLang==='en' ? (srcHerb.notesEn||srcHerb.notes) : currentLang==='both'&&srcHerb.notesEn ? `${srcHerb.notes}<div class="detail-note-en">${srcHerb.notesEn}</div>` : srcHerb.notes;
+              return `<div class="detail-note" style="margin-top:6px;">🌿 ${srcNote}</div>
+                ${srcHerb.season ? `<div class="detail-row">🗓 ${srcHerb.season}</div>` : ''}
+                ${srcHerb.use ? `<div class="detail-row">💊 ${currentLang==='en'?'Uses':'利用部位'}: ${srcHerb.use}</div>` : ''}`;
+            } else if (srcFruit) {
+              const srcNote = currentLang==='en' ? (srcFruit.notesEn||srcFruit.notes) : srcFruit.notes;
+              const plantStr = srcFruit.plant.map(m=>monthLabel(m)).join('・');
+              const harvStr  = srcFruit.harvest.map(m=>monthLabel(m)).join('・');
+              return `<div class="detail-note" style="margin-top:6px;">🍎 ${srcNote}</div>
+                <div class="detail-row">🌱 ${currentLang==='en'?'Plant':'植え付け'}: ${plantStr}</div>
+                <div class="detail-row">🧺 ${currentLang==='en'?'Harvest':'収穫'}: ${harvStr}</div>
+                <div class="detail-row">📏 ${currentLang==='en'?'Height':'標準樹高'}: ${srcFruit.height}</div>`;
+            } else if (srcWeed) {
+              const srcNote = currentLang==='en' ? (srcWeed.notesEn||srcWeed.notes) : srcWeed.notes;
+              return `<div class="detail-note" style="margin-top:6px;">🌱 ${srcNote}</div>
+                ${srcWeed.type ? `<div class="detail-row">📍 ${srcWeed.type}</div>` : ''}`;
+            }
+            return '';
+          })()}
+        </div>
+      </div>`;
+    }).join('');
+    return `<div style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:7px 12px;background:${c.bg};border-radius:10px;border-left:4px solid ${c.border}">
+        <span style="font-size:15px;">${cat === '野菜' ? '🥬' : cat === '薬草' ? '🌿' : '🌱'} ${catLabel}</span>
+        <span style="font-size:12px;color:${c.color};font-weight:700;">${list.length}種</span>
+      </div>
+      ${cards}
+    </div>`;
+  }).join('');
+
+  el.innerHTML = header + sections;
+}
+
+// ===== 果樹データ =====
+const fruitTrees = [
+  // 柑橘類
+  { name: "レモン", months: [10,11,12,1], en: "Lemon", emoji: "🍋", yomi: "れもん", type: "柑橘類", height: "2〜4m（剪定で2m以下に管理可）", plant: [3,4], harvest: [10,11,12,1], notes: "寒さにやや弱いが関西以西では露地栽培できる。実は9月頃からグリーンレモンとして収穫し、11月以降に黄色く熟す。ビタミンCが豊富。剪定でコンパクトに管理できプランター栽培も可能。", notesEn: "Slightly frost-sensitive but can be grown outdoors in Kansai and warmer regions. Harvest from September as green lemons, turning yellow from November. Rich in vitamin C. Can be kept compact by pruning and grown in large containers." },
+  { name: "みかん", months: [10,11,12], en: "Satsuma Mandarin", emoji: "🍊", yomi: "みかん", type: "柑橘類", height: "2〜3m（剪定で管理可）", plant: [3,4], harvest: [10,11,12], notes: "日本で最もポピュラーな柑橘。温暖な気候を好み、寒さにはある程度強い。植え付けから3〜5年で収穫できるようになる。甘みと酸味のバランスが良く家庭栽培に最適。", notesEn: "The most popular citrus in Japan. Prefers warm climates but tolerates moderate cold. Bears fruit 3–5 years after planting. Perfect balance of sweetness and acidity, ideal for home orchards." },
+  { name: "夏ミカン", months: [3,4,5], en: "Natsumikan (Summer Orange)", emoji: "🍊", yomi: "なつみかん", type: "柑橘類", height: "3〜5m", plant: [3,4], harvest: [3,4,5], notes: "冬に実がなり翌年春〜初夏に収穫する大型柑橘。酸味が強く爽やかな風味。マーマレードや果実酒に向く。樹勢が強く育てやすい。昔の農家の庭でよく見られた。", notesEn: "A large citrus that sets fruit in winter and is harvested the following spring to early summer. Strong acidity with a refreshing flavor. Excellent for marmalade and fruit wine. Vigorous and easy to grow." },
+  { name: "はっさく", months: [1,2,3], en: "Hassaku Orange", emoji: "🍊", yomi: "はっさく", type: "柑橘類", height: "3〜5m", plant: [3,4], harvest: [1,2,3], notes: "広島原産の日本固有の柑橘。やや苦みのある独特の風味が特徴。皮が厚く日持ちが良い。冬に収穫し2〜3月が食べごろ。爽やかな酸味と香りがある。", notesEn: "A uniquely Japanese citrus originating in Hiroshima. Has a distinctive slightly bitter flavor. Thick-skinned and stores well. Harvested in winter with peak eating from February to March." },
+  { name: "文旦", months: [2,3,4], en: "Buntan (Pomelo)", emoji: "🍊", yomi: "ぶんたん", type: "柑橘類", height: "3〜6m", plant: [3,4], harvest: [2,3,4], notes: "柑橘類の中で最大級。皮が非常に厚く、甘くてジューシーな果肉が特徴。高知・熊本などで多く栽培される。冬から春が収穫期。ザボンとも呼ばれる。寒さに弱いので温暖地向き。", notesEn: "One of the largest citrus fruits. Very thick-skinned with sweet, juicy flesh. Widely grown in Kochi and Kumamoto. Harvested from winter to spring. Also called zabon. Best suited to warm regions as it dislikes frost." },
+  { name: "ゆず", months: [10,11,12], en: "Yuzu", emoji: "🍋", yomi: "ゆず", type: "柑橘類", height: "3〜5m（矮性品種は1〜2m）", plant: [3,4], harvest: [10,11,12], notes: "日本料理に欠かせない香り高い柑橘。寒さに比較的強く全国で栽培できる。実を使うより皮や果汁の香りを楽しむ用途が多い。冬至のゆず湯に使われる。トゲが多いので注意。", notesEn: "An aromatic citrus indispensable in Japanese cuisine. Relatively cold-hardy and can be grown nationwide. Valued more for its fragrant zest and juice than the flesh. Used in the winter solstice yuzu bath tradition. Watch out for thorns." },
+  { name: "かぼす", months: [8,9,10], en: "Kabosu", emoji: "🍋", yomi: "かぼす", type: "柑橘類", height: "3〜5m", plant: [3,4], harvest: [8,9,10], notes: "大分県特産の緑色の柑橘。ゆずに似た爽やかな酸味と香りがある。サンマや焼き魚にかけるのが定番。グリーンのうちに収穫するのが一般的。ビタミンCが豊富。", notesEn: "A green citrus specialty of Oita Prefecture. Has a refreshing acidity and aroma similar to yuzu. Classically squeezed over Pacific saury and grilled fish. Typically harvested while still green. Rich in vitamin C." },
+  { name: "キンカン", months: [12,1,2], en: "Kumquat", emoji: "🍊", yomi: "きんかん", type: "柑橘類", height: "1〜2m", plant: [3,4], harvest: [12,1,2], notes: "小さな実を皮ごと丸ごと食べられる柑橘。甘い皮と酸っぱい果肉の対比が独特。喉の薬として昔から親しまれてきた。コンパクトで鉢植えにも向く。寒さにも比較的強い。", notesEn: "A citrus whose small fruits are eaten whole, peel and all. The contrast of sweet skin and sour flesh is unique. Long used as a folk remedy for sore throats. Compact enough for container growing. Relatively cold-hardy." },
+  // 落葉果樹
+  { name: "ビワ", months: [5,6], en: "Loquat", emoji: "🍃", yomi: "びわ", type: "常緑果樹", height: "5〜10m（剪定で3m以下に管理可）", plant: [9,10,3,4], harvest: [5,6], notes: "常緑の大型果樹。初夏に甘く熟した実を収穫できる。葉・種は薬草としても利用される。暖地向きで関東以西で栽培できる。放任すると大きくなるので定期的な剪定が必要。", notesEn: "A large evergreen fruit tree. Harvest sweet ripe fruit in early summer. Leaves and seeds are also used medicinally. Suited to warm regions; can be grown in Kanto and warmer areas. Requires regular pruning as it grows large if left unchecked." },
+  { name: "柿", months: [9,10,11], en: "Persimmon", emoji: "🍂", yomi: "かき", type: "落葉果樹", height: "5〜10m（剪定で3〜4mに管理可）", plant: [12,1,2,3], harvest: [9,10,11], notes: "秋の代表的な果樹。甘柿と渋柿があり、渋柿は干し柿や渋抜き処理をして食べる。日本全国で栽培できる丈夫な果樹。放任すると大きくなるため毎年剪定が大切。葉もお茶に使える。", notesEn: "An iconic autumn fruit tree. Sweet and astringent varieties exist; astringent types are dried or treated to remove tannins. Hardy and cultivable nationwide. Regular pruning is essential as it grows large. Leaves are also used for tea." },
+  { name: "ぶどう", months: [8,9,10], en: "Grape", emoji: "🍇", yomi: "ぶどう", type: "落葉果樹（つる性）", height: "棚仕立て：高さ1.8m×広さ自在", plant: [12,1,2,3], harvest: [8,9,10], notes: "棚やフェンスに這わせて育てるつる性の果樹。巨峰・デラウェア・シャインマスカットなど品種が豊富。日当たりと通風が重要。袋がけすると病気や害虫を防げる。ワイン用品種も育てられる。", notesEn: "A climbing vine trained on a trellis or fence. Abundant varieties including Kyoho, Delaware, and Shine Muscat. Good sunlight and airflow are essential. Bagging individual clusters prevents disease and pests. Wine varieties can also be grown." },
+  { name: "キウイ", months: [10,11], en: "Kiwifruit", emoji: "🥝", yomi: "きうい", type: "落葉果樹（つる性）", height: "棚仕立て：高さ2m×広さ自在", plant: [2,3], harvest: [10,11], notes: "棚に這わせて育てるつる性の果樹。雄株と雌株の両方が必要（1雄対3〜5雌が目安）。ビタミンCが豊富で栄養価が高い。寒さに強く育てやすい。収穫後に常温で追熟させてから食べる。", notesEn: "A climbing vine grown on a trellis. Both male and female plants are needed (1 male to 3–5 females). Rich in vitamin C and highly nutritious. Cold-hardy and easy to grow. After harvest, ripen at room temperature before eating." },
+  { name: "いちじく", months: [7,8,9,10], en: "Fig", emoji: "🫐", yomi: "いちじく", type: "落葉果樹", height: "3〜5m（剪定で2〜3mに管理可）", plant: [2,3,4], harvest: [7,8,9,10], notes: "育てやすい家庭果樹の定番。授粉不要で実がなる品種が多い。夏果と秋果の2回収穫できる品種もある。食物繊維・ミネラルが豊富。挿し木で簡単に増やせる。プランター栽培も可能。", notesEn: "A classic easy-to-grow home orchard tree. Most varieties are self-fertile and need no pollination. Some varieties produce two crops, summer and autumn. Rich in dietary fiber and minerals. Easily propagated from cuttings. Can be grown in large containers." },
+  { name: "梅", months: [5,6], en: "Japanese Plum (Ume)", emoji: "🌸", yomi: "うめ", type: "落葉果樹", height: "3〜6m（剪定で2〜3mに管理可）", plant: [12,1,2], harvest: [5,6], notes: "観賞用としても人気の果樹。梅干し・梅酒・梅ジャムなど加工食品の原料として欠かせない。初春に花が咲き香りが素晴らしい。育てやすく全国で栽培できる。複数品種を植えると実付きが良くなる。", notesEn: "Popular as both an ornamental and fruit tree. Indispensable for making umeboshi, plum wine, and jam. Blooms in early spring with an exquisite fragrance. Easy to grow and cultivable nationwide. Planting multiple varieties improves fruit set." },
+  { name: "桃", months: [7,8], en: "Peach", emoji: "🍑", yomi: "もも", type: "落葉果樹", height: "3〜5m（剪定で2〜3mに管理可）", plant: [12,1,2,3], harvest: [7,8], notes: "甘みが強くジューシーな夏の果物。日当たりが良く水はけの良い場所を好む。雨の多い日本では病気が出やすいので管理が大切。袋がけをすると品質が向上する。白桃・黄桃など品種が豊富。", notesEn: "A sweet, juicy summer fruit. Prefers full sun and well-drained soil. Disease management is important in Japan\'s wet climate. Bagging individual fruits improves quality. Many varieties including white-flesh and yellow-flesh types." },
+  { name: "りんご", months: [8,9,10,11], en: "Apple", emoji: "🍎", yomi: "りんご", type: "落葉果樹", height: "3〜5m（矮性台木で1.5〜2m）", plant: [12,1,2,3], harvest: [8,9,10,11], notes: "寒冷地を好む落葉果樹。授粉樹（別品種）が必要。矮性台木を使うとコンパクトに育てられる。ビタミン・ミネラルが豊富。ふじ・つがる・王林など品種が豊富。", notesEn: "A deciduous tree that prefers cool climates. A separate pollinator variety is required. Dwarf rootstocks keep trees compact. Rich in vitamins and minerals. Many varieties including Fuji, Tsugaru, and Orin." },
+  { name: "なし（梨）", months: [8,9,10], en: "Japanese Pear", emoji: "🍐", yomi: "なし", type: "落葉果樹", height: "3〜5m（棚仕立て）", plant: [12,1,2,3], harvest: [8,9,10], notes: "シャリシャリとした食感が特徴の日本の伝統果樹。棚仕立てが一般的。授粉樹が必要。水分が多くビタミンCを含む。幸水・豊水・二十世紀など品種が豊富。", notesEn: "A traditional Japanese fruit tree known for its crisp, juicy texture. Typically trained on a flat trellis. Requires a pollinator variety. High water content with vitamin C. Many varieties including Kosui, Hosui, and Nijisseiki." },
+  { name: "すもも（プラム）", months: [6,7,8], en: "Japanese Plum (Plum)", emoji: "🟣", yomi: "すもも", type: "落葉果樹", height: "3〜5m（剪定で2〜3mに管理可）", plant: [12,1,2,3], harvest: [6,7,8], notes: "酸味と甘みのバランスが良い夏の果物。育てやすく病気にも強い。品種によって授粉樹が必要。ジャムや果実酒に向く。大石早生・サンタローザなど品種が豊富。", notesEn: "A summer fruit with a good balance of sweetness and acidity. Easy to grow and disease-resistant. Some varieties need a pollinator. Excellent for jam and fruit wine. Many varieties including Oishi Wase and Santa Rosa." },
+  { name: "ブルーベリー", months: [6,7,8], en: "Blueberry", emoji: "🫐", yomi: "ぶるーべりー", type: "落葉果樹（低木）", height: "1〜2m", plant: [12,1,2,3], harvest: [6,7,8], notes: "コンパクトで家庭菜園向きの果樹。2品種以上植えると実付きが良くなる。酸性土壌を好むのでピートモスを混ぜて土づくりをする。アントシアニンが豊富。プランター栽培にも最適。", notesEn: "A compact fruit shrub ideal for home gardens. Planting two or more varieties improves fruit set. Prefers acidic soil — amend with peat moss. Rich in anthocyanins. Excellent for container growing." },
+  { name: "栗", months: [9,10], en: "Chestnut", emoji: "🌰", yomi: "くり", type: "落葉果樹", height: "10〜15m（剪定で4〜6mに管理可）", plant: [12,1,2,3], harvest: [9,10], notes: "秋の代表的な果樹。大きく育つので広いスペースが必要。授粉樹があると実付きが良い。イガ（外皮）が鋭いので収穫時は注意。栗ご飯・モンブランなど和洋両方の料理に活躍。", notesEn: "An iconic autumn fruit tree. Grows large and needs ample space. A pollinator tree improves fruit set. The spiny burr requires caution at harvest. Versatile in both Japanese and Western cooking." },
+  { name: "さくらんぼ", months: [5,6], en: "Cherry", emoji: "🍒", yomi: "さくらんぼ", type: "落葉果樹", height: "5〜8m（剪定で3〜4mに管理可）", plant: [12,1,2,3], harvest: [5,6], notes: "初夏に収穫できる宝石のような果物。2品種以上植えると実付きが良くなる。雨に弱く裂果しやすいので雨除けが有効。佐藤錦・紅秀峰など品種が豊富。自家消費なら育て甲斐がある。", notesEn: "A gem-like fruit harvested in early summer. Planting two or more varieties improves fruit set. Sensitive to rain and prone to splitting; rain cover is recommended. Many varieties including Sato Nishiki and Beni Shuho. Very rewarding to grow at home." },
+  { name: "オリーブ", months: [9,10,11], en: "Olive", emoji: "🫒", yomi: "おりーぶ", type: "常緑果樹", height: "5〜10m（剪定で2〜3mに管理可）", plant: [3,4], harvest: [9,10,11], notes: "地中海原産の常緑果樹。観賞用としても人気が高い。2品種以上植えると実付きが良い。塩漬けやオリーブオイルに加工できる。乾燥に強く水はけの良い場所を好む。比較的寒さにも強い。", notesEn: "An evergreen from the Mediterranean, also popular as an ornamental. Planting two or more varieties improves fruiting. Fruits can be cured in salt or pressed for olive oil. Drought-tolerant and prefers well-drained soil. Reasonably cold-hardy." },
+  { name: "アボカド", months: [9,10,11], en: "Avocado", emoji: "🥑", yomi: "あぼかど", type: "常緑果樹", height: "5〜10m（剪定で2〜3mに管理可）", plant: [4,5], harvest: [9,10,11], notes: "近年家庭での栽培が増えている南国系果樹。寒さに弱いので関東以西の温暖地向き。種から育てることもできるが実がなるまで5〜10年かかる。複数品種を植えると実付きが良くなる。", notesEn: "Increasingly popular for home growing. Frost-sensitive and best suited to warm regions from Kanto westward. Can be grown from seed but takes 5–10 years to fruit. Planting multiple varieties improves fruiting." },
+];
+
+function renderFruitTrees() {
+  const el = document.getElementById('all-fruit-list');
+  const types = [...new Set(fruitTrees.map(f => f.type))];
+
+  const typeColor = {
+    '柑橘類':          { color: '#b45309', bg: '#fffbeb', border: '#fcd34d' },
+    '常緑果樹':        { color: '#065f46', bg: '#ecfdf5', border: '#6ee7b7' },
+    '落葉果樹':        { color: '#1e40af', bg: '#eff6ff', border: '#93c5fd' },
+    '落葉果樹（つる性）': { color: '#6d28d9', bg: '#f5f3ff', border: '#c4b5fd' },
+    '落葉果樹（低木）': { color: '#0f766e', bg: '#f0fdfa', border: '#99f6e4' },
+  };
+
+  const header = `<div style="font-size:13px;color:#6b7280;margin-bottom:12px;padding:8px 12px;background:#fffbeb;border-radius:10px;">
+    🍎 ${currentLang==='en'?'Fruit Trees — tap to see details':'果樹一覧 — タップして詳細を見る'} (${fruitTrees.length}種)
+  </div>`;
+
+  const sections = types.map(type => {
+    const list = fruitTrees.filter(f => f.type === type);
+    const c = typeColor[type] || { color: '#374151', bg: '#f9fafb', border: '#d1d5db' };
+    const cards = list.map(f => {
+      const id = 'ft_' + f.name;
+      const isOpen = openCard[id];
+      const displayName = (currentLang === 'en' && f.en) ? f.en
+        : currentLang === 'both' && f.en ? `${f.name} <span class="veg-name-sub">${f.en}</span>`
+        : f.name;
+      const noteText = currentLang === 'en' ? (f.notesEn || f.notes) : f.notes;
+      const plantStr = f.plant.map(m => monthLabel(m)).join('・');
+      const harvestStr = f.harvest.map(m => monthLabel(m)).join('・');
+      return `<div class="veg-card" onclick="toggleCard('${id}')" data-card-id="${id}">
+        <div class="veg-card-header">
+          <span class="veg-emoji">${f.emoji}</span>
+          <div style="flex:1">
+            <div class="veg-name">${displayName}</div>
+            <div style="font-size:13px;color:#9ca3af;margin-top:2px;">📏 ${f.height}</div>
+            ${makeFruitMiniBar(f.plant || [], f.harvest || [])}
+          </div>
+          <span class="arrow">${isOpen?'▲':'▼'}</span>
+        </div>
+        <div class="veg-detail ${isOpen?'open':''}">
+          <div id="img_${id}" class="wiki-img-wrap"></div>
+          <div class="detail-note">💡 ${noteText}</div>
+          <div class="detail-row">🌱 ${currentLang==='en'?'Plant':'植え付け'}: ${plantStr}</div>
+          <div class="detail-row">🧺 ${currentLang==='en'?'Harvest':'収穫'}: ${harvestStr}</div>
+          <div class="detail-row">📏 ${currentLang==='en'?'Height':'標準樹高'}: ${f.height}</div>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:7px 12px;background:${c.bg};border-radius:10px;border-left:4px solid ${c.border}">
+        <span style="font-size:15px;">🍎 ${type}</span>
+        <span style="font-size:12px;color:${c.color};font-weight:700;">${list.length}種</span>
+      </div>
+      ${cards}
+    </div>`;
+  }).join('');
+
+  el.innerHTML = header + sections;
+}
+
+
+function renderHerbs() {
+  const edibleWeedList = weeds.filter(w => w.edible);
+  const edibleLabel = currentLang==='en' ? '🍽 Edible Field Weeds' : '🍽 食べられる畑の草';
+  const edibleSection = edibleWeedList.length > 0
+    ? `<div style="font-size:13px;color:#16a34a;font-weight:700;margin:16px 0 8px;padding:8px 12px;background:#f0fdf4;border-radius:10px;border-left:4px solid #86efac;">${edibleLabel} — ${edibleWeedList.length}種</div>` +
+      edibleWeedList.map(w => makeSimpleCard(w, 'ew')).join('')
+    : '';
+  document.getElementById('all-herb-list').innerHTML =
+    `<div style="font-size:13px;color:#6b7280;margin-bottom:12px;padding:8px 12px;background:#f0fdf4;border-radius:10px;">🌿 薬草・山菜・野草 ${herbs.length}種 ― タップして詳細を見る</div>` +
+    herbs.map(h => makeSimpleCard(h, 'h')).join('') +
+    edibleSection;
+}
+
+function renderWeeds() {
+  document.getElementById('all-weed-list').innerHTML =
+    `<div style="font-size:13px;color:#6b7280;margin-bottom:12px;padding:8px 12px;background:#fefce8;border-radius:10px;">🌱 田んぼ・畑でよく見る草 ${weeds.length}種 ― タップして詳細を見る</div>` +
+weeds.map(w => makeSimpleCard(w, 'w')).join('');
+}
+
+
+
+function vegDisplayName(v) {
+  if (currentLang === 'en') return v.en;
+  if (currentLang === 'both') return `${v.name} <span class="veg-name-sub">${v.en}</span>`;
+  return v.name;
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('active',
+      (i===0 && tab==='calendar') ||
+      (i===1 && tab==='list') ||
+      (i===2 && tab==='herb') ||
+      (i===3 && tab==='weed') ||
+      (i===4 && tab==='perennial') ||
+      (i===5 && tab==='fruit')
+    );
+  });
+  document.getElementById('calendar-view').style.display    = tab === 'calendar'   ? '' : 'none';
+  document.getElementById('list-view').style.display        = tab === 'list'        ? '' : 'none';
+  document.getElementById('herb-view').style.display        = tab === 'herb'        ? '' : 'none';
+  document.getElementById('weed-view').style.display        = tab === 'weed'        ? '' : 'none';
+  document.getElementById('perennial-view').style.display   = tab === 'perennial'   ? '' : 'none';
+  document.getElementById('fruit-view').style.display       = tab === 'fruit'       ? '' : 'none';
+  if (tab === 'list') renderList();
+  if (tab === 'herb') renderHerbs();
+  if (tab === 'weed') renderWeeds();
+  if (tab === 'perennial') renderPerennials();
+  if (tab === 'fruit') renderFruitTrees();
+}
+
+function onSearch(val) {
+  searchQuery = val.trim();
+  const clearBtn = document.getElementById('search-clear');
+  clearBtn.style.display = searchQuery ? 'flex' : 'none';
+  if (searchQuery) {
+    document.getElementById('search-results').style.display = '';
+    document.getElementById('main-content').style.display = 'none';
+    renderSearch();
+  } else {
+    document.getElementById('search-results').style.display = 'none';
+    document.getElementById('main-content').style.display = '';
+  }
+}
+
+function clearSearch() {
+  document.getElementById('search-input').value = '';
+  lastSearchQuery = '';
+  const btn = document.getElementById('back-to-search');
+  if (btn) btn.style.display = 'none';
+  onSearch('');
+}
+
+// 文字種の正規化：カタカナをひらがなに、全角英数を半角に、大文字を小文字に統一
+function normalize(str) {
+  return str
+    .toLowerCase()
+    .replace(/[\u30A1-\u30F6\u30FC]/g, c =>
+      c === '\u30FC' ? 'ー' : String.fromCharCode(c.charCodeAt(0) - 0x60)
+    )
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+}
+
+// 検索結果からタブに移動してカードを開く（検索キーワードを保持）
+let lastSearchQuery = '';  // 戻るボタン用に検索キーワードを保持
+
+function jumpToItem(tab, name, cardPrefix) {
+  // 検索キーワードを保存しておく
+  lastSearchQuery = searchQuery;
+  // 検索表示を隠してメインコンテンツへ
+  document.getElementById('search-results').style.display = 'none';
+  document.getElementById('main-content').style.display = '';
+  switchTab(tab);
+  const id = cardPrefix + '_' + name;
+  openCard[id] = true;
+  if (tab === 'list') renderList();
+  else if (tab === 'herb') renderHerbs();
+  else if (tab === 'weed') renderWeeds();
+  else if (tab === 'fruit') renderFruitTrees();
+  // 戻るボタンを表示
+  showBackToSearch();
+  // カード要素を探してスクロール
+  setTimeout(() => {
+    const allCards = document.querySelectorAll('.veg-card');
+    let target = null;
+    for (const card of allCards) {
+      if (card.getAttribute('onclick') && card.getAttribute('onclick').includes(`'${id}'`)) {
+        target = card;
+        break;
       }
     }
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    const allItems = [...vegetables, ...herbs, ...weeds, ...fruitTrees];
+    const item = allItems.find(v => v.name === name);
+    if (!item || !item.noImage) {
+      const wikiSearch = item && item.wikiSearch ? item.wikiSearch : undefined;
+      fetchWikiImage(name, id, wikiSearch);
+    }
+  }, 80);
+}
 
-    // Enterキーでも入れるように
-    document.getElementById('pw-input').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') checkPassword();
+function showBackToSearch() {
+  let btn = document.getElementById('back-to-search');
+  if (!btn) {
+    btn = document.createElement('div');
+    btn.id = 'back-to-search';
+    btn.style.cssText = 'position:fixed;bottom:20px;right:16px;z-index:999;background:#14532d;color:#fff;border-radius:24px;padding:10px 18px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,0.25);display:flex;align-items:center;gap:6px;';
+    btn.innerHTML = '◀ 検索結果に戻る';
+    btn.onclick = backToSearch;
+    document.body.appendChild(btn);
+  }
+  btn.style.display = 'flex';
+}
+
+function backToSearch() {
+  // 検索結果画面に戻る
+  document.getElementById('main-content').style.display = 'none';
+  document.getElementById('search-results').style.display = '';
+  // 検索キーワードを復元
+  searchQuery = lastSearchQuery;
+  document.getElementById('search-input').value = lastSearchQuery;
+  document.getElementById('search-clear').style.display = lastSearchQuery ? 'flex' : 'none';
+  renderSearch();
+  // ボタンを隠す
+  const btn = document.getElementById('back-to-search');
+  if (btn) btn.style.display = 'none';
+  // 画面上部へスクロール
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+
+function renderSearch() {
+  const q = normalize(searchQuery);
+
+  function matchItem(item) {
+    const targets = [
+      normalize(item.name),
+      normalize(item.yomi || ''),
+      normalize(item.en || ''),
+      normalize(item.notes || ''),
+    ];
+    return targets.some(t => t.includes(q));
+  }
+
+  const matchedVeg   = vegetables.filter(matchItem);
+  const matchedHerb  = herbs.filter(matchItem);
+  const matchedWeed  = weeds.filter(matchItem);
+  const matchedFruit = fruitTrees.filter(matchItem);
+  const totalCount   = matchedVeg.length + matchedHerb.length + matchedWeed.length + matchedFruit.length;
+
+  const badge = document.getElementById('search-badge');
+  badge.textContent = currentLang === 'en'
+    ? `${totalCount} result(s) for "${searchQuery}" — tap to view details`
+    : `「${searchQuery}」の検索結果：${totalCount}件 — タップで詳細へ`;
+
+  const el = document.getElementById('search-list');
+  if (totalCount === 0) {
+    el.innerHTML = `<div class="empty">${currentLang==='en' ? 'No results found' : '見つかりませんでした'}</div>`;
+    return;
+  }
+
+  function makeNameCard(item, tab, prefix) {
+    const displayName = (currentLang === 'en' && item.en) ? item.en
+      : (currentLang === 'both' && item.en) ? `${item.name} <span class="veg-name-sub">${item.en}</span>`
+      : item.name;
+    const sub = item.season
+      ? `<span style="font-size:13px;color:#9ca3af;">　${item.season}</span>`
+      : (item.sow && item.sow.length)
+      ? `<span style="font-size:13px;color:#9ca3af;">　🌱${item.sow.map(m=>monthLabel(m)).join('・')} 🧺${item.harvest.map(m=>monthLabel(m)).join('・')}</span>`
+      : (item.height)
+      ? `<span style="font-size:13px;color:#9ca3af;">　📏${item.height}</span>`
+      : '';
+    return `<div class="veg-card" style="cursor:pointer;" onclick="jumpToItem('${tab}','${item.name.replace(/'/g,"\\'")}','${prefix}')">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:28px;">${item.emoji}</span>
+        <div>
+          <div class="veg-name">${displayName}${sub}</div>
+        </div>
+        <span style="margin-left:auto;color:#9ca3af;font-size:18px;">▶</span>
+      </div>
+    </div>`;
+  }
+
+  const catLabel = (ja, en) => currentLang === 'en' ? en : ja;
+  let html = '';
+  if (matchedVeg.length > 0) {
+    html += `<div style="font-size:13px;color:#16a34a;font-weight:700;margin:8px 0 6px;">🥬 ${catLabel('野菜','Vegetables')} (${matchedVeg.length})</div>`;
+    html += matchedVeg.map(v => makeNameCard(v, 'list', 'l')).join('');
+  }
+  if (matchedHerb.length > 0) {
+    html += `<div style="font-size:13px;color:#065f46;font-weight:700;margin:12px 0 6px;">🌿 ${catLabel('薬草','Medicinal Herbs')} (${matchedHerb.length})</div>`;
+    html += matchedHerb.map(h => makeNameCard(h, 'herb', 'h')).join('');
+  }
+  if (matchedWeed.length > 0) {
+    html += `<div style="font-size:13px;color:#713f12;font-weight:700;margin:12px 0 6px;">🌱 ${catLabel('畑の草','Field Weeds')} (${matchedWeed.length})</div>`;
+    html += matchedWeed.map(w => makeNameCard(w, 'weed', 'w')).join('');
+  }
+  if (matchedFruit.length > 0) {
+    html += `<div style="font-size:13px;color:#b45309;font-weight:700;margin:12px 0 6px;">🍎 ${catLabel('果樹','Fruit Trees')} (${matchedFruit.length})</div>`;
+    html += matchedFruit.map(f => makeNameCard(f, 'fruit', 'ft')).join('');
+  }
+  el.innerHTML = html;
+}
+
+function sowLabel() { return currentLang === 'en' ? '🌱 Sow' : '🌱 種まき'; }
+function seedlingLabel() { return currentLang === 'en' ? '🪴 Seedling' : '🪴 苗の植え付け'; }
+function harvestLabel() { return currentLang === 'en' ? '🧺 Harvest' : '🧺 収穫'; }
+
+function monthLabel(m) {
+  if (currentLang === 'en') return monthsEn[m-1];
+  return m + '月';
+}
+
+function renderMonths() {
+  const el = document.getElementById('month-scroll');
+  el.innerHTML = Array.from({length:12}, (_,i) => {
+    const mn = i + 1;
+    const s = getSeason(mn);
+    const isSelected = selectedMonth === mn;
+    const isNow = currentMonth === mn;
+    const label = currentLang === 'en' ? monthsEn[i] : monthsJa[i];
+    return `<button class="month-btn ${isSelected?'selected':''} ${isNow&&!isSelected?'now-dot':''}"
+      style="${isSelected?`background:${s.color};box-shadow:0 2px 8px ${s.color}88;`:isNow?'background:#dcfce7;':''}"
+      onclick="selectMonth(${mn})">${label}</button>`;
+  }).join('');
+}
+
+function selectMonth(m) {
+  selectedMonth = m;
+  renderMonths();
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const s = getSeason(selectedMonth);
+  const badge = document.getElementById('season-badge');
+  const mLabel = currentLang === 'en' ? monthsEn[selectedMonth-1] : selectedMonth + '月';
+  const sName = currentLang === 'en' ? s.en : s.ja;
+  badge.textContent = `${mLabel} — ${sName}`;
+  if (currentLang === 'both') badge.textContent = `${selectedMonth}月 ${monthsEn[selectedMonth-1]} — ${s.ja} ${s.en}`;
+  badge.style.color = s.color;
+  badge.style.borderColor = s.color;
+  badge.style.background = s.bg;
+
+  const sowList     = vegetables.filter(v => v.sow.includes(selectedMonth));
+  const seedList    = vegetables.filter(v => v.seedling.includes(selectedMonth));
+  const harvestList = vegetables.filter(v => v.harvest.includes(selectedMonth));
+  const monthHerbs  = herbs.filter(h => h.months && h.months.includes(selectedMonth));
+  const monthWeeds  = weeds.filter(w => w.months && w.months.includes(selectedMonth));
+  const monthFruits = fruitTrees.filter(f => f.months && f.months.includes(selectedMonth));
+
+  const el = document.getElementById('veg-list');
+
+  // タイルをクリックしたときに詳細を開閉するポップアップ表示
+  function makeTileSection(label, color, bg, border, list, prefix, getDetail) {
+    if (list.length === 0) return '';
+    const tiles = list.map(item => {
+      const id = prefix + '_' + item.name;
+      const dispName = (currentLang === 'en' && item.en) ? item.en : item.name;
+      const shortName = dispName.replace(/（[^）]*）/g, '').replace(/\([^)]*\)/g, '').trim();
+      return `<div class="cal-tile" onclick="toggleCalDetail('${id}')" id="tile_${id}">
+        <span class="cal-tile-emoji">${item.emoji}</span>
+        <span class="cal-tile-name">${shortName}</span>
+      </div>`;
+    }).join('');
+
+    const details = list.map(item => {
+      const id = prefix + '_' + item.name;
+      return `<div class="cal-detail-panel" id="detail_${id}" style="display:none">
+        ${getDetail(item, id)}
+      </div>`;
+    }).join('');
+
+    return `<div class="cal-section" style="margin-bottom:14px;">
+      <div class="cal-section-header" style="background:${bg};border-left:4px solid ${border};">
+        <span style="font-size:15px;font-weight:700;color:${color};">${label}</span>
+        <span style="font-size:12px;color:${color};font-weight:600;margin-left:6px;">${list.length}種</span>
+      </div>
+      <div class="cal-tile-grid">${tiles}</div>
+      ${details}
+    </div>`;
+  }
+
+  function toggleCalDetail(id) {
+    const panel = document.getElementById('detail_' + id);
+    const tile  = document.getElementById('tile_' + id);
+    if (!panel) return;
+    const isOpen = panel.style.display !== 'none';
+    // 同セクション内の他パネルを閉じる
+    panel.closest('.cal-section').querySelectorAll('.cal-detail-panel').forEach(p => {
+      p.style.display = 'none';
     });
-  </script>
+    panel.closest('.cal-section').querySelectorAll('.cal-tile').forEach(t => {
+      t.classList.remove('active');
+    });
+    if (!isOpen) {
+      panel.style.display = 'block';
+      tile.classList.add('active');
+      // 画像取得（noImageフラグがある場合はスキップ）
+      const allItems = [...vegetables, ...herbs, ...weeds, ...fruitTrees];
+      const item = allItems.find(v => v.name === id.replace(/^[a-z]+_/, ''));
+      if (!item || !item.noImage) {
+        const wikiSearch = item && item.wikiSearch ? item.wikiSearch : undefined;
+        fetchWikiImage(id.replace(/^[a-z]+_/, ''), 'cp_' + id, wikiSearch);
+      }
+      // 詳細パネル自体を画面上部へスクロール
+      setTimeout(() => {
+        const rect = panel.getBoundingClientRect();
+        const scrollTop = window.scrollY + rect.top - 16;
+        window.scrollTo({ top: scrollTop, behavior: 'smooth' });
+      }, 80);
+    }
+  }
+  // グローバルに登録
+  window.toggleCalDetail = toggleCalDetail;
 
+  // 野菜の詳細
+  function vegDetail(v, id) {
+    const sowStr  = v.sow.length ? v.sow.map(m=>monthLabel(m)).join('・') : '―';
+    const seedStr = v.seedling.length ? v.seedling.map(m=>monthLabel(m)).join('・') : (currentLang==='en'?'Direct':'直まき');
+    const harStr  = v.harvest.map(m=>monthLabel(m)).join('・');
+    const noteText = currentLang === 'en' ? `💡 ${v.notesEn||v.notes}`
+      : currentLang === 'both' && v.notesEn ? `💡 ${v.notes}<div class="detail-note-en">${v.notesEn}</div>`
+      : `💡 ${v.notes}`;
+    const displayName = currentLang==='en' ? (v.en||v.name) : currentLang==='both'&&v.en ? `${v.name} <span class="veg-name-sub">${v.en}</span>` : v.name;
+    const barHtml = (() => {
+      const labels = Array.from({length:12},(_,i)=>{const m=i+1;const lbl=currentLang==='en'?monthsEn[i].slice(0,1):m;return `<div class="mini-label ${m===currentMonth?'now-label':''}">${lbl}</div>`;}).join('');
+      const cells = Array.from({length:12},(_,i)=>{const m=i+1;let cls=v.harvest.includes(m)?'harvest':v.seedling.includes(m)?'seedling':v.sow.includes(m)?'sow':'';if(m===currentMonth)cls+=' now';return `<div class="mini-cell ${cls}"></div>`;}).join('');
+      const lg1=currentLang==='en'?'🟢Sow':'🟢種まき'; const lg2=currentLang==='en'?'🟡Transplant':'🟡苗'; const lg3=currentLang==='en'?'🔴Harvest':'🔴収穫';
+      return `<div class="mini-labels">${labels}</div><div class="mini-bar">${cells}</div><div class="mini-legend"><span>${lg1}</span><span>${lg2}</span><span>${lg3}</span></div>`;
+    })();
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #f3f4f6;">
+        <span style="font-size:28px;">${v.emoji}</span>
+        <div style="flex:1">
+          <div class="veg-name">${displayName}</div>
+          ${barHtml}
+        </div>
+      </div>
+      <div id="img_cp_${id}" class="wiki-img-wrap"></div>
+      <div class="detail-note">${noteText}</div>
+      <div class="detail-row">🌱 ${currentLang==='en'?'Sow':'種まき'}: ${sowStr}</div>
+      <div class="detail-row">🪴 ${currentLang==='en'?'Seedling':'苗の植え付け'}: ${seedStr}</div>
+      <div class="detail-row">🧺 ${currentLang==='en'?'Harvest':'収穫'}: ${harStr}</div>
+      ${v.recipe ? `<div class="detail-recipe">🍳 ${currentLang==='en'?(v.recipeEn||v.recipe):v.recipe}</div>` : ''}
+      ${v.storage ? `<div class="detail-storage">📦 ${currentLang==='en'?(v.storageEn||v.storage):v.storage}</div>` : ''}`;
+  }
+
+  // 薬草・草の詳細
+  function natureDetail(item, id) {
+    const noteText = currentLang === 'en' ? (item.notesEn || item.notes)
+      : currentLang === 'both' && item.notesEn ? `${item.notes}<div class="detail-note-en">${item.notesEn}</div>`
+      : item.notes;
+    const displayName = currentLang==='en' ? (item.en||item.name) : currentLang==='both'&&item.en ? `${item.name} <span class="veg-name-sub">${item.en}</span>` : item.name;
+    const barHtml = item.months && item.months.length ? makeMiniBar(item.months, 'harvest', currentLang==='en'?'🟠Active season':'🟠見られる時期') : '';
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #f3f4f6;">
+        <span style="font-size:28px;">${item.emoji}</span>
+        <div style="flex:1">
+          <div class="veg-name">${displayName}</div>
+          ${barHtml}
+        </div>
+      </div>
+      <div id="img_cp_${id}" class="wiki-img-wrap"></div>
+      <div class="detail-note">💡 ${noteText}</div>
+      ${item.season ? `<div class="detail-row">🗓 ${item.season}</div>` : ''}
+      ${item.use ? `<div class="detail-row">💊 ${currentLang==='en'?'Uses':'利用部位'}: ${item.use}</div>` : ''}
+      ${item.type ? `<div class="detail-row">📍 ${item.type}</div>` : ''}
+      ${item.recipe ? `<div class="detail-recipe">🍳 ${item.recipe}</div>` : ''}
+      ${item.storage ? `<div class="detail-storage">📦 ${item.storage}</div>` : ''}`;
+  }
+
+  // 果樹の詳細
+  function fruitDetail(f, id) {
+    const noteText = currentLang === 'en' ? (f.notesEn || f.notes) : f.notes;
+    const harStr = f.harvest.map(m => monthLabel(m)).join('・');
+    const plantStr = f.plant.map(m => monthLabel(m)).join('・');
+    const displayName = currentLang==='en' ? (f.en||f.name) : currentLang==='both'&&f.en ? `${f.name} <span class="veg-name-sub">${f.en}</span>` : f.name;
+    const barHtml = makeFruitMiniBar(f.plant||[], f.harvest||[]);
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #f3f4f6;">
+        <span style="font-size:28px;">${f.emoji}</span>
+        <div style="flex:1">
+          <div class="veg-name">${displayName}</div>
+          ${barHtml}
+        </div>
+      </div>
+      <div id="img_cp_${id}" class="wiki-img-wrap"></div>
+      <div class="detail-note">💡 ${noteText}</div>
+      <div class="detail-row">🌱 ${currentLang==='en'?'Plant':'植え付け'}: ${plantStr}</div>
+      <div class="detail-row">🧺 ${currentLang==='en'?'Harvest':'収穫'}: ${harStr}</div>
+      <div class="detail-row">📏 ${currentLang==='en'?'Height':'標準樹高'}: ${f.height}</div>`;
+  }
+
+  const sowLabel2  = currentLang==='en' ? '🌱 Sowing'       : '🌱 種まき';
+  const seedLabel2 = currentLang==='en' ? '🪴 Transplant'   : '🪴 苗の植え付け';
+  const harvLabel2 = currentLang==='en' ? '🧺 Harvest'      : '🧺 収穫';
+  const herbLabel  = currentLang==='en' ? '🌿 Herbs & Wild Veg' : '🌿 薬草・山菜';
+  const weedLabel  = currentLang==='en' ? '🌱 Field Weeds'  : '🌱 畑の草';
+  const fruitLabel = currentLang==='en' ? '🍎 Fruit Harvest': '🍎 果樹の収穫';
+
+  const html =
+    makeTileSection(sowLabel2,  '#16a34a','#f0fdf4','#86efac', sowList,     'csow',  vegDetail) +
+    makeTileSection(seedLabel2, '#d97706','#fffbeb','#fcd34d', seedList,    'cseed', vegDetail) +
+    makeTileSection(harvLabel2, '#dc2626','#fff1f2','#fca5a5', harvestList, 'charv', vegDetail) +
+    makeTileSection(herbLabel,  '#065f46','#ecfdf5','#6ee7b7', monthHerbs,  'cherb', natureDetail) +
+    makeTileSection(weedLabel,  '#713f12','#fefce8','#fde68a', monthWeeds,  'cweed', natureDetail) +
+    makeTileSection(fruitLabel, '#b45309','#fffbeb','#fcd34d', monthFruits, 'cfrt',  fruitDetail);
+
+  if (!html) {
+    el.innerHTML = `<div class="empty">${currentLang==='en' ? 'No entries this month' : 'この月は該当する野菜・草がありません'}</div>`;
+  } else {
+    el.innerHTML = html;
+  }
+}
+
+
+// 12ヶ月バーグラフを生成する共通関数
+function makeMiniBar(activeMonths, activeClass, labelText) {
+  const labels = Array.from({length:12}, (_,i) => {
+    const m = i+1;
+    const lbl = currentLang==='en' ? monthsEn[i].slice(0,1) : m;
+    return `<div class="mini-label ${m===currentMonth?'now-label':''}">${lbl}</div>`;
+  }).join('');
+  const cells = Array.from({length:12}, (_,i) => {
+    const m = i+1;
+    let cls = activeMonths.includes(m) ? activeClass : '';
+    if (m === currentMonth) cls += ' now';
+    return `<div class="mini-cell ${cls}"></div>`;
+  }).join('');
+  return `<div class="mini-labels">${labels}</div>
+    <div class="mini-bar">${cells}</div>
+    <div class="mini-legend"><span>${labelText}</span></div>`;
+}
+
+// 果樹用：植え付け＋収穫の2段バーグラフ
+function makeFruitMiniBar(plantMonths, harvestMonths) {
+  const labels = Array.from({length:12}, (_,i) => {
+    const m = i+1;
+    const lbl = currentLang==='en' ? monthsEn[i].slice(0,1) : m;
+    return `<div class="mini-label ${m===currentMonth?'now-label':''}">${lbl}</div>`;
+  }).join('');
+  const cells = Array.from({length:12}, (_,i) => {
+    const m = i+1;
+    let cls = '';
+    if (harvestMonths.includes(m)) cls = 'harvest';
+    else if (plantMonths.includes(m)) cls = 'sow';
+    if (m === currentMonth) cls += ' now';
+    return `<div class="mini-cell ${cls}"></div>`;
+  }).join('');
+  const legendPlant = currentLang==='en' ? '🟢Plant' : '🟢植え付け';
+  const legendHarv  = currentLang==='en' ? '🔴Harvest' : '🔴収穫';
+  return `<div class="mini-labels">${labels}</div>
+    <div class="mini-bar">${cells}</div>
+    <div class="mini-legend"><span>${legendPlant}</span><span>${legendHarv}</span></div>`;
+}
+
+function renderList() {
+  const el = document.getElementById('all-veg-list');
+  const cards = vegetables.map(v => {
+    const id = 'l_' + v.name;
+    const isOpen = openCard[id];
+    const labels = Array.from({length:12}, (_,i) => {
+      const m = i+1;
+      const lbl = currentLang==='en' ? monthsEn[i].slice(0,1) : m;
+      return `<div class="mini-label ${m===currentMonth?'now-label':''}">${lbl}</div>`;
+    }).join('');
+    const barCells = Array.from({length:12}, (_,i) => {
+      const m = i+1;
+      let cls = '';
+      if (v.harvest.includes(m)) cls = 'harvest';
+      else if (v.seedling.includes(m)) cls = 'seedling';
+      else if (v.sow.includes(m)) cls = 'sow';
+      if (m === currentMonth) cls += ' now';
+      return `<div class="mini-cell ${cls}"></div>`;
+    }).join('');
+    const sowStr = v.sow.length ? v.sow.map(m=>monthLabel(m)).join('・') : '―';
+    const seedStr = v.seedling.length ? v.seedling.map(m=>monthLabel(m)).join('・') : (currentLang==='en'?'Direct':'直まき');
+    const harStr = v.harvest.map(m=>monthLabel(m)).join('・');
+    const noteText = currentLang === 'en' ? v.notesEn : currentLang === 'both' ? `${v.notes} / ${v.notesEn}` : v.notes;
+    const legendSow = currentLang==='en'?'🟢Sow':'🟢種まき';
+    const legendSeed = currentLang==='en'?'🟡Transplant':'🟡苗';
+    const legendHarv = currentLang==='en'?'🔴Harvest':'🔴収穫';
+    return `<div class="veg-card" onclick="toggleCard('${id}')" data-card-id="${id}">
+      <div class="veg-card-header">
+        <span class="veg-emoji">${v.emoji}</span>
+        <div style="flex:1">
+          <div class="veg-name">${vegDisplayName(v)}</div>
+          <div class="mini-labels">${labels}</div>
+          <div class="mini-bar">${barCells}</div>
+          <div class="mini-legend"><span>${legendSow}</span><span>${legendSeed}</span><span>${legendHarv}</span></div>
+        </div>
+        <span class="arrow">${isOpen?'▲':'▼'}</span>
+      </div>
+      <div class="veg-detail ${isOpen?'open':''}">
+        <div id="img_${id}" class="wiki-img-wrap"></div>
+        <div class="detail-note">💡 ${noteText}</div>
+        <div class="detail-row">🌱 ${currentLang==='en'?'Sow':'種まき'}: ${sowStr} ／ 🪴 ${currentLang==='en'?'Seedling':'苗の植え付け'}: ${seedStr} ／ 🧺 ${currentLang==='en'?'Harvest':'収穫'}: ${harStr}</div>
+        ${v.recipe ? `<div class="detail-recipe">🍳 ${currentLang==='en'?(v.recipeEn||v.recipe):v.recipe}</div>` : ''}
+        ${v.storage ? `<div class="detail-storage">📦 ${currentLang==='en'?(v.storageEn||v.storage):v.storage}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+  el.innerHTML = cards;
+}
+
+function toggleCard(id) {
+  openCard[id] = !openCard[id];
+  if (id.startsWith('sh_') || id.startsWith('sw_') || id.startsWith('sf_') || id.startsWith('s_')) renderSearch();
+  else if (id.startsWith('h_') || id.startsWith('ew_')) renderHerbs();
+  else if (id.startsWith('w_')) renderWeeds();
+  else if (id.startsWith('p_')) renderPerennials();
+  else if (id.startsWith('ft_')) renderFruitTrees();
+  else if (id.startsWith('ch_') || id.startsWith('cw_') || id.startsWith('cf_')) renderCalendar();
+  else if (currentTab === 'calendar') renderCalendar();
+  else renderList();
+
+  if (openCard[id]) {
+    const name = id.replace(/^[a-z]+_/, '');
+    const allItems = [...vegetables, ...herbs, ...weeds, ...fruitTrees];
+    const item = allItems.find(v => v.name === name);
+
+    // 画像取得
+    if (!item || !item.noImage) {
+      const wikiSearch = item && item.wikiSearch ? item.wikiSearch : undefined;
+      fetchWikiImage(name, id, wikiSearch);
+    }
+
+    // 開いたカードを画面上部に表示
+    setTimeout(() => {
+      // data-card-id でカードを特定
+      let targetCard = null;
+      const allCards = document.querySelectorAll('.veg-card[data-card-id]');
+      for (const card of allCards) {
+        if (card.getAttribute('data-card-id') === id) {
+          targetCard = card;
+          break;
+        }
+      }
+      if (targetCard) {
+        // カード全体を画面上部へ（block: 'start' でカード頭を上に）
+        targetCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // さらに少し上にオフセット（検索バーなどの分）
+        setTimeout(() => {
+          window.scrollBy({ top: -70, behavior: 'smooth' });
+        }, 300);
+      }
+    }, 150);
+  }
+}
+
+updateTranslations();
+renderMonths();
+renderCalendar();
+</script>
 </body>
 </html>
